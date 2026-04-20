@@ -20,8 +20,8 @@ export function MyLoads() {
         {bookedLoads.length === 0 ? (
           <Card className="p-8 sm:p-10 bg-card border-border">
             <p className="text-muted-foreground">
-              Hali booked load yo&apos;q. Load Board sahifasidan `Book Now`
-              bosib bu yerga qo&apos;shiladi.
+              No booked loads yet. Click “Book Now” on the Load Board page
+              to add them here.
             </p>
           </Card>
         ) : (
