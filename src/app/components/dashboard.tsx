@@ -8,12 +8,16 @@ import {
 import { Card } from "./ui/card";
 import { Link } from "react-router";
 import React from "react";
+import { motion } from "motion/react";
+import { useAppState } from "../context/app-state";
 
 export function Dashboard() {
+  const { savedLoadIds, bookedLoadIds, allLoads } = useAppState();
+
   const stats = [
     {
       label: "Available Loads",
-      value: "1,248",
+      value: allLoads.length.toLocaleString(),
       change: "+12.5%",
       icon: Package,
       color: "text-primary",
@@ -22,7 +26,7 @@ export function Dashboard() {
     },
     {
       label: "Active Loads",
-      value: "36",
+      value: bookedLoadIds.length.toString(),
       change: "+8.2%",
       icon: TrendingUp,
       color: "text-green-500",
@@ -31,7 +35,7 @@ export function Dashboard() {
     },
     {
       label: "Pending Offers",
-      value: "12",
+      value: savedLoadIds.length.toString(),
       change: "-3.1%",
       icon: Clock,
       color: "text-accent-foreground",
@@ -72,14 +76,13 @@ export function Dashboard() {
 
   return (
     <div className="min-h-full p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 bg-background">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="mb-2 text-foreground text-2xl sm:text-3xl font-semibold">
             Dashboard
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base">
-            Welcome back! Here's an overview of your freight operations.
+            Welcome back! Here&apos;s an overview of your freight operations.
           </p>
         </div>
         <div className="text-xs sm:text-sm text-muted-foreground">
@@ -87,55 +90,59 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Stats Grid - Auto-fit responsive */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
-        {stats.map((stat) => (
-          <Card
+        {stats.map((stat, index) => (
+          <motion.div
             key={stat.label}
-            className="p-5 sm:p-6 bg-card border-border hover:border-primary/50 transition-all duration-200 hover:shadow-lg hover:shadow-primary/5"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: index * 0.06 }}
           >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-xs sm:text-sm text-muted-foreground mb-2">
-                  {stat.label}
-                </p>
-                <h2 className="mb-2 text-foreground text-2xl sm:text-3xl font-bold">
-                  {stat.value}
-                </h2>
-                <div className="flex items-center gap-1">
-                  <ArrowUpRight
-                    className={`h-3.5 w-3.5 ${
-                      stat.trend === "up"
-                        ? "text-green-500 rotate-0"
-                        : "text-destructive rotate-90"
-                    }`}
-                  />
-                  <p
-                    className={`text-xs sm:text-sm font-medium ${
-                      stat.trend === "up"
-                        ? "text-green-500"
-                        : "text-destructive"
-                    }`}
-                  >
-                    {stat.change}
+            <Card className="p-5 sm:p-6 bg-card border-border hover:border-primary/50 transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 hover:bg-primary/5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2">
+                    {stat.label}
                   </p>
-                  <span className="text-xs text-muted-foreground ml-1">
-                    vs last month
-                  </span>
+                  <h2 className="mb-2 text-foreground text-2xl sm:text-3xl font-bold">
+                    {stat.value}
+                  </h2>
+                  <div className="flex items-center gap-1">
+                    <ArrowUpRight
+                      className={`h-3.5 w-3.5 ${
+                        stat.trend === "up"
+                          ? "text-green-500 rotate-0"
+                          : "text-destructive rotate-90"
+                      }`}
+                    />
+                    <p
+                      className={`text-xs sm:text-sm font-medium ${
+                        stat.trend === "up"
+                          ? "text-green-500"
+                          : "text-destructive"
+                      }`}
+                    >
+                      {stat.change}
+                    </p>
+                    <span className="text-xs text-muted-foreground ml-1">
+                      vs last month
+                    </span>
+                  </div>
+                </div>
+                <div
+                  className={`p-3 sm:p-3.5 rounded-xl ${stat.bgColor} ring-1 ring-inset ring-white/10`}
+                >
+                  <stat.icon
+                    className={`h-6 w-6 sm:h-7 sm:w-7 ${stat.color}`}
+                  />
                 </div>
               </div>
-              <div
-                className={`p-3 sm:p-3.5 rounded-xl ${stat.bgColor} ring-1 ring-inset ring-white/10`}
-              >
-                <stat.icon className={`h-6 w-6 sm:h-7 sm:w-7 ${stat.color}`} />
-              </div>
-            </div>
-          </Card>
+            </Card>
+          </motion.div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Quick Actions - Takes 2 columns on large screens */}
         <Card className="lg:col-span-2 p-5 sm:p-6 bg-card border-border">
           <div className="flex items-center justify-between mb-5">
             <h3 className="text-foreground text-lg sm:text-xl font-semibold">
@@ -145,7 +152,7 @@ export function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <Link
               to="/load-board"
-              className="p-5 border border-border rounded-xl hover:bg-accent hover:border-primary/50 transition-all duration-200 text-left group"
+              className="p-5 border border-border rounded-xl hover:bg-primary/10 hover:border-primary/50 transition-all duration-200 text-left group cursor-pointer"
             >
               <div className="mb-3">
                 <div className="p-2.5 bg-primary/10 rounded-lg w-fit">
@@ -161,7 +168,7 @@ export function Dashboard() {
             </Link>
             <Link
               to="/my-loads"
-              className="p-5 border border-border rounded-xl hover:bg-accent hover:border-primary/50 transition-all duration-200 text-left group"
+              className="p-5 border border-border rounded-xl hover:bg-primary/10 hover:border-primary/50 transition-all duration-200 text-left group cursor-pointer"
             >
               <div className="mb-3">
                 <div className="p-2.5 bg-primary/10 rounded-lg w-fit">
@@ -175,7 +182,7 @@ export function Dashboard() {
                 Manage current shipments
               </p>
             </Link>
-            <button className="p-5 border border-border rounded-xl hover:bg-accent hover:border-primary/50 transition-all duration-200 text-left group">
+            <button className="p-5 border border-border rounded-xl hover:bg-primary/10 hover:border-primary/50 transition-all duration-200 text-left group cursor-pointer">
               <div className="mb-3">
                 <div className="p-2.5 bg-primary/10 rounded-lg w-fit">
                   <TrendingUp className="h-5 w-5 text-primary" />
@@ -191,7 +198,6 @@ export function Dashboard() {
           </div>
         </Card>
 
-        {/* Recent Activity - Takes 1 column */}
         <Card className="p-5 sm:p-6 bg-card border-border">
           <div className="flex items-center justify-between mb-5">
             <h3 className="text-foreground text-lg sm:text-xl font-semibold">
@@ -204,7 +210,7 @@ export function Dashboard() {
                 key={activity.id}
                 className="flex items-start gap-3 pb-4 border-b border-border last:border-0 last:pb-0"
               >
-                <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">
                     {activity.action}

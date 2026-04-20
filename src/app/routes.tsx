@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import { Layout } from "./components/layout";
 import { Dashboard } from "./components/dashboard";
 import { LoadBoard } from "./components/load-board";
@@ -21,6 +21,7 @@ export const router = createBrowserRouter([
       { path: "my-loads", Component: MyLoads },
       { path: "saved-loads", Component: SavedLoads },
       { path: "settings", Component: Settings },
+      { path: "*", Component: () => <Navigate to="/" replace /> },
     ],
   },
 ]);

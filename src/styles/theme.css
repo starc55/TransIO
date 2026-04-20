@@ -3,29 +3,29 @@
 :root {
   --font-size: 16px;
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --background: #0A0E1A;
-  --foreground: #E5E7EB;
-  --card: #0F1419;
+  --background: #07111f;
+  --foreground: #e5edf7;
+  --card: #0d1728;
   --card-foreground: #E5E7EB;
-  --popover: #0F1419;
+  --popover: #0f1b2e;
   --popover-foreground: #E5E7EB;
-  --primary: #1E3A8A;
+  --primary: #2f6fed;
   --primary-foreground: #ffffff;
-  --secondary: #1F2937;
+  --secondary: #182336;
   --secondary-foreground: #E5E7EB;
-  --muted: #1F2937;
-  --muted-foreground: #9CA3AF;
-  --accent: #1E3A8A;
-  --accent-foreground: #BFDBFE;
+  --muted: #152238;
+  --muted-foreground: #8ca0bc;
+  --accent: #183054;
+  --accent-foreground: #d5e4ff;
   --destructive: #DC2626;
   --destructive-foreground: #ffffff;
-  --border: #1F2937;
+  --border: #20314a;
   --input: transparent;
-  --input-background: #0F1419;
+  --input-background: #0c1627;
   --switch-background: #374151;
-  --font-weight-medium: 500;
+  --font-weight-medium: 600;
   --font-weight-normal: 400;
-  --ring: #1E3A8A;
+  --ring: #2f6fed;
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -43,26 +43,26 @@
 }
 
 .dark {
-  --background: #000000;
-  --foreground: #E5E7EB;
-  --card: #0A0A0A;
+  --background: #02060d;
+  --foreground: #e5edf7;
+  --card: #08101d;
   --card-foreground: #E5E7EB;
-  --popover: #0A0A0A;
+  --popover: #0b1322;
   --popover-foreground: #E5E7EB;
-  --primary: #1E40AF;
+  --primary: #3b82f6;
   --primary-foreground: #ffffff;
-  --secondary: #171717;
+  --secondary: #111a29;
   --secondary-foreground: #E5E7EB;
-  --muted: #171717;
-  --muted-foreground: #9CA3AF;
-  --accent: #1E40AF;
-  --accent-foreground: #93C5FD;
+  --muted: #101927;
+  --muted-foreground: #8ca0bc;
+  --accent: #13233c;
+  --accent-foreground: #dbeafe;
   --destructive: #B91C1C;
   --destructive-foreground: #FEE2E2;
-  --border: #1A1A1A;
-  --input: #171717;
-  --ring: #1E40AF;
-  --font-weight-medium: 500;
+  --border: #17263c;
+  --input: #101927;
+  --ring: #3b82f6;
+  --font-weight-medium: 600;
   --font-weight-normal: 400;
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -128,6 +128,10 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-family);
+    background-image:
+      radial-gradient(circle at top left, rgba(59, 130, 246, 0.18), transparent 35%),
+      radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.12), transparent 30%);
+    min-height: 100vh;
   }
 
   /**
@@ -173,12 +177,18 @@
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
+    cursor: pointer;
   }
 
   input {
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
+  }
+
+  a,
+  [role="button"] {
+    cursor: pointer;
   }
 
   /* Custom scrollbar styling */

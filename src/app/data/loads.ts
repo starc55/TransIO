@@ -33,12 +33,12 @@ export const mockLoads: Load[] = [
     origin: {
       city: "Los Angeles",
       state: "CA",
-      address: "2100 E Maple Ave, El Segundo, CA 90245"
+      address: "2100 E Maple Ave, El Segundo, CA 90245",
     },
     destination: {
       city: "Phoenix",
       state: "AZ",
-      address: "4545 W Glendale Ave, Phoenix, AZ 85301"
+      address: "4545 W Glendale Ave, Phoenix, AZ 85301",
     },
     distance: 373,
     rate: 1250,
@@ -50,23 +50,24 @@ export const mockLoads: Load[] = [
     broker: "Swift Logistics",
     contact: {
       phone: "(555) 123-4567",
-      email: "dispatch@swiftlog.com"
+      email: "dispatch@swiftlog.com",
     },
-    notes: "Fragile electronics. Handle with care. Driver must have 2+ years experience.",
+    notes:
+      "Fragile electronics. Handle with care. Driver must have 2+ years experience.",
     tags: ["Hot Load", "Urgent"],
-    status: "Available"
+    status: "Available",
   },
   {
     id: "L002",
     origin: {
       city: "Chicago",
       state: "IL",
-      address: "1200 W 35th St, Chicago, IL 60609"
+      address: "1200 W 35th St, Chicago, IL 60609",
     },
     destination: {
       city: "Dallas",
       state: "TX",
-      address: "3500 Sylvan Ave, Dallas, TX 75212"
+      address: "3500 Sylvan Ave, Dallas, TX 75212",
     },
     distance: 967,
     rate: 2800,
@@ -78,23 +79,24 @@ export const mockLoads: Load[] = [
     broker: "FreightMax Pro",
     contact: {
       phone: "(555) 234-5678",
-      email: "ops@freightmax.com"
+      email: "ops@freightmax.com",
     },
-    notes: "Temperature-controlled load. Must maintain 34-38°F throughout transit.",
+    notes:
+      "Temperature-controlled load. Must maintain 34-38°F throughout transit.",
     tags: ["High Pay"],
-    status: "Available"
+    status: "Available",
   },
   {
     id: "L003",
     origin: {
       city: "Atlanta",
       state: "GA",
-      address: "5600 Oakbrook Pkwy, Norcross, GA 30093"
+      address: "5600 Oakbrook Pkwy, Norcross, GA 30093",
     },
     destination: {
       city: "Miami",
       state: "FL",
-      address: "7800 NW 25th St, Miami, FL 33122"
+      address: "7800 NW 25th St, Miami, FL 33122",
     },
     distance: 662,
     rate: 1890,
@@ -106,23 +108,23 @@ export const mockLoads: Load[] = [
     broker: "Elite Transport",
     contact: {
       phone: "(555) 345-6789",
-      email: "load@elitetrans.com"
+      email: "load@elitetrans.com",
     },
     notes: "General freight. Standard delivery timeline.",
     tags: [],
-    status: "Available"
+    status: "Available",
   },
   {
     id: "L004",
     origin: {
       city: "Seattle",
       state: "WA",
-      address: "3900 1st Ave S, Seattle, WA 98134"
+      address: "3900 1st Ave S, Seattle, WA 98134",
     },
     destination: {
       city: "Portland",
       state: "OR",
-      address: "7000 NE Airport Way, Portland, OR 97218"
+      address: "7000 NE Airport Way, Portland, OR 97218",
     },
     distance: 173,
     rate: 650,
@@ -134,23 +136,23 @@ export const mockLoads: Load[] = [
     broker: "Pacific Freight Lines",
     contact: {
       phone: "(555) 456-7890",
-      email: "bookings@pacificfreight.com"
+      email: "bookings@pacificfreight.com",
     },
     notes: "Construction materials. Tarps required. Secure load properly.",
     tags: ["Quick Trip"],
-    status: "Available"
+    status: "Available",
   },
   {
     id: "L005",
     origin: {
       city: "Denver",
       state: "CO",
-      address: "6500 Tower Rd, Denver, CO 80249"
+      address: "6500 Tower Rd, Denver, CO 80249",
     },
     destination: {
       city: "Salt Lake City",
       state: "UT",
-      address: "5600 W Amelia Earhart Dr, Salt Lake City, UT 84116"
+      address: "5600 W Amelia Earhart Dr, Salt Lake City, UT 84116",
     },
     distance: 525,
     rate: 1600,
@@ -162,23 +164,23 @@ export const mockLoads: Load[] = [
     broker: "Mountain Express",
     contact: {
       phone: "(555) 567-8901",
-      email: "support@mountainexp.com"
+      email: "support@mountainexp.com",
     },
     notes: "Standard freight. Full truckload. Easy loading dock access.",
     tags: [],
-    status: "Available"
+    status: "Available",
   },
   {
     id: "L006",
     origin: {
       city: "Houston",
       state: "TX",
-      address: "8300 N Sam Houston Pkwy E, Houston, TX 77044"
+      address: "8300 N Sam Houston Pkwy E, Houston, TX 77044",
     },
     destination: {
       city: "New Orleans",
       state: "LA",
-      address: "2200 Veterans Blvd, New Orleans, LA 70062"
+      address: "2200 Veterans Blvd, New Orleans, LA 70062",
     },
     distance: 348,
     rate: 1150,
@@ -190,23 +192,23 @@ export const mockLoads: Load[] = [
     broker: "Gulf Coast Freight",
     contact: {
       phone: "(555) 678-9012",
-      email: "dispatch@gulfcoast.com"
+      email: "dispatch@gulfcoast.com",
     },
     notes: "Perishable goods. Temperature must be maintained at 35°F.",
     tags: ["Hot Load"],
-    status: "Available"
+    status: "Available",
   },
   {
     id: "L007",
     origin: {
       city: "Boston",
       state: "MA",
-      address: "25 Dorchester Ave, Boston, MA 02205"
+      address: "25 Dorchester Ave, Boston, MA 02205",
     },
     destination: {
       city: "New York",
       state: "NY",
-      address: "Building 75, JFK Airport, Jamaica, NY 11430"
+      address: "Building 75, JFK Airport, Jamaica, NY 11430",
     },
     distance: 215,
     rate: 850,
@@ -218,23 +220,23 @@ export const mockLoads: Load[] = [
     broker: "Northeast Carriers",
     contact: {
       phone: "(555) 789-0123",
-      email: "loads@northeast.com"
+      email: "loads@northeast.com",
     },
     notes: "Expedited delivery. Must arrive by 6 PM same day.",
     tags: ["Urgent", "Quick Trip"],
-    status: "Available"
+    status: "Available",
   },
   {
     id: "L008",
     origin: {
       city: "Nashville",
       state: "TN",
-      address: "540 Mainstream Dr, Nashville, TN 37228"
+      address: "540 Mainstream Dr, Nashville, TN 37228",
     },
     destination: {
       city: "Memphis",
       state: "TN",
-      address: "3250 Democrat Rd, Memphis, TN 38118"
+      address: "3250 Democrat Rd, Memphis, TN 38118",
     },
     distance: 212,
     rate: 720,
@@ -246,23 +248,24 @@ export const mockLoads: Load[] = [
     broker: "Southern Transport Co",
     contact: {
       phone: "(555) 890-1234",
-      email: "booking@southerntrans.com"
+      email: "booking@southerntrans.com",
     },
-    notes: "Heavy machinery. Chains and binders required. Oversize permit in place.",
+    notes:
+      "Heavy machinery. Chains and binders required. Oversize permit in place.",
     tags: [],
-    status: "Available"
+    status: "Available",
   },
   {
     id: "L009",
     origin: {
       city: "Indianapolis",
       state: "IN",
-      address: "7855 Rockville Rd, Indianapolis, IN 46214"
+      address: "7855 Rockville Rd, Indianapolis, IN 46214",
     },
     destination: {
       city: "Columbus",
       state: "OH",
-      address: "4300 W Broad St, Columbus, OH 43228"
+      address: "4300 W Broad St, Columbus, OH 43228",
     },
     distance: 175,
     rate: 580,
@@ -274,23 +277,23 @@ export const mockLoads: Load[] = [
     broker: "Midwest Logistics",
     contact: {
       phone: "(555) 901-2345",
-      email: "dispatch@midwestlog.com"
+      email: "dispatch@midwestlog.com",
     },
     notes: "Retail goods. Easy access warehouse. Multiple drops available.",
     tags: ["Quick Trip"],
-    status: "Available"
+    status: "Available",
   },
   {
     id: "L010",
     origin: {
       city: "San Francisco",
       state: "CA",
-      address: "1333 Bryant St, San Francisco, CA 94103"
+      address: "1333 Bryant St, San Francisco, CA 94103",
     },
     destination: {
       city: "Las Vegas",
       state: "NV",
-      address: "6185 S Valley View Blvd, Las Vegas, NV 89118"
+      address: "6185 S Valley View Blvd, Las Vegas, NV 89118",
     },
     distance: 570,
     rate: 1920,
@@ -302,23 +305,24 @@ export const mockLoads: Load[] = [
     broker: "Coast Express",
     contact: {
       phone: "(555) 012-3456",
-      email: "loads@coastexpress.com"
+      email: "loads@coastexpress.com",
     },
-    notes: "Temperature-sensitive pharmaceuticals. Maintain 2-8°C. White glove service required.",
+    notes:
+      "Temperature-sensitive pharmaceuticals. Maintain 2-8°C. White glove service required.",
     tags: ["Hot Load", "High Pay"],
-    status: "Available"
+    status: "Available",
   },
   {
     id: "L011",
     origin: {
       city: "Detroit",
       state: "MI",
-      address: "1500 E 8 Mile Rd, Detroit, MI 48234"
+      address: "1500 E 8 Mile Rd, Detroit, MI 48234",
     },
     destination: {
       city: "Pittsburgh",
       state: "PA",
-      address: "1000 Reedsdale St, Pittsburgh, PA 15233"
+      address: "1000 Reedsdale St, Pittsburgh, PA 15233",
     },
     distance: 288,
     rate: 950,
@@ -330,23 +334,23 @@ export const mockLoads: Load[] = [
     broker: "Great Lakes Freight",
     contact: {
       phone: "(555) 123-4568",
-      email: "greatlakes@freight.com"
+      email: "greatlakes@freight.com",
     },
     notes: "Auto parts. Time-sensitive delivery. Factory direct.",
     tags: ["Urgent"],
-    status: "Available"
+    status: "Available",
   },
   {
     id: "L012",
     origin: {
       city: "Charlotte",
       state: "NC",
-      address: "5901 Statesville Rd, Charlotte, NC 28269"
+      address: "5901 Statesville Rd, Charlotte, NC 28269",
     },
     destination: {
       city: "Raleigh",
       state: "NC",
-      address: "4600 Emperor Blvd, Durham, NC 27703"
+      address: "4600 Emperor Blvd, Durham, NC 27703",
     },
     distance: 145,
     rate: 485,
@@ -358,10 +362,10 @@ export const mockLoads: Load[] = [
     broker: "Carolina Carriers",
     contact: {
       phone: "(555) 234-5679",
-      email: "carolina@carriers.com"
+      email: "carolina@carriers.com",
     },
     notes: "Building materials. Tarps provided. Short haul.",
     tags: ["Quick Trip"],
-    status: "Available"
-  }
+    status: "Available",
+  },
 ];
