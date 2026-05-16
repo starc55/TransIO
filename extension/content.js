@@ -1,5 +1,5 @@
 const TEST_MODE = false;
-const INGEST_ENDPOINT = "http://localhost:3000/ingest";
+const INGEST_ENDPOINT = "https://transio-t20l.onrender.com/ingest";
 const SCRAPE_INTERVAL_MS = 30000;
 const DETAIL_WAIT_MS = 1500;
 const ROW_WAIT_STEP_MS = 2000;

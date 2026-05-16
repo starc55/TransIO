@@ -20,7 +20,7 @@ export interface AdminUser {
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   import.meta.env.API_BASE_URL ||
-  "http://localhost:3000";
+  "https://transio-t20l.onrender.com";
 
 async function apiRequest<T>(
   path: string,

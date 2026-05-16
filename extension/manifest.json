@@ -6,7 +6,7 @@
   "permissions": ["storage"],
   "host_permissions": [
     "https://one.dat.com/*",
-    "http://localhost:3000/*"
+    "https://transio-t20l.onrender.com/*"
   ],
   "content_scripts": [
     {
