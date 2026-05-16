@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "TransIO DAT Collector",
+  "version": "1.0.0",
+  "description": "Scrapes DAT loadboard rows and sends loads to the local TransIO ingest API.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://one.dat.com/*",
+    "http://localhost:3000/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://one.dat.com/search-loads*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "TransIO DAT Collector",
+    "default_popup": "popup.html"
+  }
+}
