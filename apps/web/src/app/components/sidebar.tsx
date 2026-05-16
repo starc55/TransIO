@@ -16,6 +16,7 @@ import { Button } from "./ui/button";
 import React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { formatRoleLabel, useAppState } from "../context/app-state";
+import logo from "/logo.png";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -85,20 +86,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
 
             <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/55 p-3 shadow-sm backdrop-blur-xl">
-              <div className="mb-3 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar-primary text-sm font-semibold text-sidebar-primary-foreground shadow-sm">
-                  TI
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-sidebar-foreground/55">
-                    Dispatch Hub
-                  </p>
-                  <h1 className="truncate text-base font-semibold text-sidebar-foreground">
-                    TransIO
-                  </h1>
-                </div>
-              </div>
-
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-md border border-sidebar-border bg-sidebar px-3 py-2.5">
                   <div className="mb-1 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-sidebar-foreground/55">

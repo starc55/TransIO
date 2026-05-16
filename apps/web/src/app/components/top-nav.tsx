@@ -16,7 +16,7 @@ import {
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import logo from "../../imports/logo.png";
+import logo from "/logo.png";
 import React from "react";
 import { formatRoleLabel, useAppState } from "../context/app-state";
 import { useNavigate } from "react-router";
@@ -130,7 +130,7 @@ export function TopNav({ onMenuClick, sidebarOpen }: TopNavProps) {
             className="h-10 rounded-md border-border bg-input-background pl-10 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-primary/20"
           />
         </div>
-        <div className="hidden items-center gap-2 rounded-md border border-border bg-background px-3 py-2 lg:flex">
+        <div className="hidden items-center gap-2 rounded-md border border-border bg-background px-3 py-1 lg:flex">
           <Sparkles className="h-4 w-4 text-primary" />
           <div className="leading-tight">
             <p className="text-xs font-medium text-foreground">
@@ -275,7 +275,9 @@ export function TopNav({ onMenuClick, sidebarOpen }: TopNavProps) {
                       }`}
                     >
                       {isAdmin && <ShieldCheck className="h-3 w-3" />}
-                      {isAdmin ? "Admin" : formatRoleLabel(currentProfile?.role)}
+                      {isAdmin
+                        ? "Admin"
+                        : formatRoleLabel(currentProfile?.role)}
                     </p>
                   </div>
                   <div className="my-2 h-px bg-border" />
