@@ -12,6 +12,8 @@ import {
   Settings,
   Sparkles,
   ShieldCheck,
+  Loader2,
+  Trash2,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -21,6 +23,7 @@ import React from "react";
 import { formatRoleLabel, useAppState } from "../context/app-state";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
+import { toast } from "sonner";
 
 interface TopNavProps {
   onMenuClick: () => void;
@@ -33,6 +36,7 @@ export function TopNav({ onMenuClick, sidebarOpen }: TopNavProps) {
   const profileRef = React.useRef<HTMLDivElement | null>(null);
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
   const [profileOpen, setProfileOpen] = React.useState(false);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const {
     darkMode,
     toggleDarkMode,
@@ -47,8 +51,26 @@ export function TopNav({ onMenuClick, sidebarOpen }: TopNavProps) {
     setSearchQuery,
     markNotificationRead,
     markAllNotificationsRead,
+    clearNotifications,
   } = useAppState();
   const hasUnreadNotifications = unreadNotifications > 0;
+  const hasNotifications = notifications.length > 0;
+
+  const handleLogout = async () => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    try {
+      setIsLoggingOut(true);
+      setProfileOpen(false);
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      setIsLoggingOut(false);
+      toast.error(error instanceof Error ? error.message : "Logout failed");
+    }
+  };
 
   React.useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -175,7 +197,7 @@ export function TopNav({ onMenuClick, sidebarOpen }: TopNavProps) {
           >
             <Bell className="h-4 w-4 text-foreground sm:h-5 sm:w-5" />
             {hasUnreadNotifications && (
-              <span className="absolute top-1 right-1 flex h-2.5 min-w-2.5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] leading-none text-white ring-2 ring-card sm:top-1.5 sm:right-1.5">
+              <span className="absolute top-1 right-1 flex h-2.5 min-w-2.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-none text-primary-foreground ring-2 ring-card sm:top-1.5 sm:right-1.5">
                 {unreadNotifications}
               </span>
             )}
@@ -191,16 +213,29 @@ export function TopNav({ onMenuClick, sidebarOpen }: TopNavProps) {
                     Platform updates and activity
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={markAllNotificationsRead}
-                  disabled={!hasUnreadNotifications}
-                  className="h-8 rounded-md px-2 text-xs hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <CheckCheck className="mr-1 h-3.5 w-3.5" />
-                  Mark as read
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={markAllNotificationsRead}
+                    disabled={!hasUnreadNotifications}
+                    title="Mark all notifications as read"
+                    className="h-8 rounded-md px-2 text-xs hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <CheckCheck className="mr-1 h-3.5 w-3.5" />
+                    Mark
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={clearNotifications}
+                    disabled={!hasNotifications}
+                    title="Clear all notifications"
+                    className="h-8 w-8 rounded-md hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
               <div className="max-h-96 overflow-auto">
                 {notifications.length === 0 ? (
@@ -213,12 +248,16 @@ export function TopNav({ onMenuClick, sidebarOpen }: TopNavProps) {
                       key={notification.id}
                       type="button"
                       onClick={() => markNotificationRead(notification.id)}
-                      className="w-full border-b border-border px-4 py-3 text-left hover:bg-accent/55 last:border-b-0"
+                      className={`w-full border-b border-border px-4 py-3 text-left hover:bg-accent/55 last:border-b-0 ${
+                        notification.read ? "" : "bg-muted/50"
+                      }`}
                     >
                       <div className="flex items-start gap-3">
                         <span
-                          className={`mt-1 h-2.5 w-2.5 rounded-full ${
-                            notification.read ? "bg-border" : "bg-primary"
+                          className={`mt-1 h-2.5 w-2.5 rounded-full ring-2 ring-popover ${
+                            notification.read
+                              ? "border border-border bg-background"
+                              : "bg-primary"
                           }`}
                         />
                         <div className="min-w-0 flex-1">
@@ -294,15 +333,16 @@ export function TopNav({ onMenuClick, sidebarOpen }: TopNavProps) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      logout();
-                      navigate("/login");
-                    }}
-                    className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm text-foreground hover:bg-destructive/10"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    <LogOut className="h-4 w-4" />
-                    Log out
+                    {isLoggingOut ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <LogOut className="h-4 w-4" />
+                    )}
+                    {isLoggingOut ? "Signing out..." : "Log out"}
                   </button>
                 </>
               ) : (

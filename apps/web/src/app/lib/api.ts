@@ -55,7 +55,6 @@ export async function fetchLoads(): Promise<Load[]> {
     .order("received_at", { ascending: false });
 
   if (error) {
-    console.log(error);
     throw new Error("Loads could not be loaded from Supabase");
   }
 

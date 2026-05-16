@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { supabase } from "../../lib/supabase";
+import { toast } from "sonner";
 
 export function ResetPassword() {
   const navigate = useNavigate();
@@ -83,6 +84,7 @@ export function ResetPassword() {
       }
 
       setSuccess("Password updated successfully");
+      toast.success("Password updated successfully");
 
       window.setTimeout(() => {
         navigate("/login", { replace: true });
@@ -198,13 +200,19 @@ export function ResetPassword() {
             </div>
 
             {error && (
-              <div className="rounded-md border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <div
+                role="alert"
+                className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground"
+              >
                 {error}
               </div>
             )}
 
             {success && (
-              <div className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
+              <div
+                role="status"
+                className="rounded-md border border-border bg-popover px-3 py-2 text-sm text-foreground"
+              >
                 {success}
               </div>
             )}

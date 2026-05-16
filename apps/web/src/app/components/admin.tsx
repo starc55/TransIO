@@ -19,6 +19,7 @@ import {
 import { formatRoleLabel, useAppState } from "../context/app-state";
 import { BarChart3, RefreshCw, ShieldCheck, Users, Boxes } from "lucide-react";
 import React from "react";
+import { toast } from "sonner";
 
 type AdminView = "overview" | "users" | "stats";
 
@@ -40,6 +41,7 @@ export function Admin({ view = "overview" }: AdminProps) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const permissionToastShownRef = React.useRef(false);
 
   const loadAdminData = async () => {
     if (!currentUserId) {
@@ -58,11 +60,13 @@ export function Admin({ view = "overview" }: AdminProps) {
       setStats(statsResponse);
       setUsers(usersResponse);
     } catch (requestError) {
-      setError(
+      const message =
         requestError instanceof Error
           ? requestError.message
-          : "Admin data could not be loaded"
-      );
+          : "Admin data could not be loaded";
+
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -75,6 +79,15 @@ export function Admin({ view = "overview" }: AdminProps) {
 
     loadAdminData();
   }, [currentUserId, isAdmin]);
+
+  useEffect(() => {
+    if (profileLoading || isAdmin || permissionToastShownRef.current) {
+      return;
+    }
+
+    permissionToastShownRef.current = true;
+    toast.error("Permission denied");
+  }, [isAdmin, profileLoading]);
 
   if (profileLoading) {
     return (

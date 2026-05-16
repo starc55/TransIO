@@ -29,6 +29,7 @@ export function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [authMessage, setAuthMessage] = useState("");
   const navigate = useNavigate();
   const {
     authReady,
@@ -52,6 +53,7 @@ export function Login() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setAuthMessage("");
 
     const normalizedEmail = email.trim().toLowerCase();
     const cleanName = name.trim();
@@ -84,14 +86,16 @@ export function Login() {
             });
 
       if (result.needsVerification) {
-        toast.success(result.message || "Please verify your email");
+        setAuthMessage(
+          result.message || "Check your email to verify the account."
+        );
         setMode("login");
+        setPassword("");
         return;
       }
 
       if (result.success) {
-        toast.success(result.message || "Welcome to TransIO");
-        navigate(result.isAdmin ? "/admin" : "/loads");
+        navigate("/");
       }
     } catch (error) {
       toast.error(
@@ -104,9 +108,9 @@ export function Login() {
 
   const handleGoogleLogin = async () => {
     try {
+      setAuthMessage("");
       setIsLoading(true);
-      const result = await loginWithGoogle();
-      toast.message(result.message || "Redirecting to Google...");
+      await loginWithGoogle();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Google sign-in failed"
@@ -143,7 +147,10 @@ export function Login() {
           <div className="mb-5 grid grid-cols-2 rounded-md border border-border bg-muted p-1">
             <button
               type="button"
-              onClick={() => setMode("login")}
+              onClick={() => {
+                setMode("login");
+                setAuthMessage("");
+              }}
               className={`rounded px-3 py-2 text-sm font-medium transition ${
                 mode === "login"
                   ? "bg-card text-foreground shadow-sm"
@@ -154,7 +161,10 @@ export function Login() {
             </button>
             <button
               type="button"
-              onClick={() => setMode("register")}
+              onClick={() => {
+                setMode("register");
+                setAuthMessage("");
+              }}
               className={`rounded px-3 py-2 text-sm font-medium transition ${
                 mode === "register"
                   ? "bg-card text-foreground shadow-sm"
@@ -185,6 +195,15 @@ export function Login() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {authMessage && (
+              <div
+                role="status"
+                className="rounded-md border border-border bg-popover px-3 py-2 text-sm text-foreground"
+              >
+                {authMessage}
+              </div>
+            )}
+
             {mode === "register" && (
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm text-foreground">

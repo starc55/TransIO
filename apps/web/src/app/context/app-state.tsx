@@ -76,6 +76,7 @@ interface AppStateValue {
   updateProfile: (payload: UserProfile) => void;
   markNotificationRead: (notificationId: string) => void;
   markAllNotificationsRead: () => void;
+  clearNotifications: () => void;
   refreshLoads: () => Promise<void>;
 }
 
@@ -86,22 +87,8 @@ const STORAGE_KEYS = {
   notifications: "transio-notifications",
 } as const;
 
-const defaultNotifications: AppNotification[] = [
-  {
-    id: "n-1",
-    title: "Collector ready",
-    description: "TransIO is waiting for fresh loads from the DAT extension.",
-    createdAt: "Today",
-    read: false,
-  },
-  {
-    id: "n-2",
-    title: "Admin dashboard available",
-    description: "Use an admin account to review stats and users.",
-    createdAt: "Today",
-    read: false,
-  },
-];
+const defaultNotifications: AppNotification[] = [];
+const seededNotificationIds = new Set(["n-1", "n-2"]);
 
 const defaultProfile: UserProfile = {
   id: null,
@@ -143,6 +130,12 @@ function createNotification(title: string, description: string): AppNotification
     createdAt: "Just now",
     read: false,
   };
+}
+
+function removeSeededNotifications(notifications: AppNotification[]) {
+  return notifications.filter((notification) => {
+    return !seededNotificationIds.has(notification.id);
+  });
 }
 
 export function normalizeRole(role?: string | null): UserRole {
@@ -282,7 +275,9 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     setSavedLoadIds(readStorage(STORAGE_KEYS.saved, []));
     setBookedLoadIds(readStorage(STORAGE_KEYS.booked, []));
     setNotifications(
-      readStorage(STORAGE_KEYS.notifications, defaultNotifications)
+      removeSeededNotifications(
+        readStorage(STORAGE_KEYS.notifications, defaultNotifications)
+      )
     );
 
     const initializeAuth = async () => {
@@ -323,9 +318,15 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       window.setTimeout(() => {
-        applySession(nextSession ?? null).finally(() => {
-          setAuthReady(true);
-        });
+        applySession(nextSession ?? null)
+          .catch((error) => {
+            setAuthError(
+              error instanceof Error ? error.message : "Authentication failed"
+            );
+          })
+          .finally(() => {
+            setAuthReady(true);
+          });
       }, 0);
     });
 
@@ -339,7 +340,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       setCurrentProfile(null);
       setIsAuthenticated(false);
       setProfileLoading(false);
-      return;
+      return null;
     }
 
     setProfileLoading(true);
@@ -349,12 +350,14 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       const nextProfile = await loadProfileForSupabaseUser(nextSession.user);
       setCurrentProfile(nextProfile);
       setIsAuthenticated(true);
+      return nextProfile;
     } catch (error) {
       setCurrentProfile(null);
       setIsAuthenticated(false);
       setAuthError(
         error instanceof Error ? error.message : "Profile could not be loaded"
       );
+      throw error;
     } finally {
       setProfileLoading(false);
     }
@@ -473,16 +476,10 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (data.user) {
-      await applySession(data.session ?? null);
-      addNotification("Welcome back", "Your session is active and ready.");
-
-      const nextProfile = data.session?.user
-        ? await loadProfileForSupabaseUser(data.session.user)
-        : null;
+      const nextProfile = await applySession(data.session ?? null);
 
       return {
         success: true,
-        message: "Signed in successfully",
         isAdmin: nextProfile?.role === "admin",
       };
     }
@@ -522,14 +519,11 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (data.user && data.session) {
-      await applySession(data.session);
-      addNotification("Account created", "Your TransIO account is ready.");
-      const nextProfile = await loadProfileForSupabaseUser(data.user);
+      const nextProfile = await applySession(data.session);
 
       return {
         success: true,
-        message: "Account created successfully",
-        isAdmin: nextProfile.role === "admin",
+        isAdmin: nextProfile?.role === "admin",
       };
     }
 
@@ -559,19 +553,21 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
     return {
       success: true,
-      message: "Redirecting to Google...",
     };
   };
 
   const logout = async () => {
     if (supabase) {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        throw error;
+      }
     }
 
     setIsAuthenticated(false);
     setCurrentProfile(null);
     setSession(null);
-    addNotification("Logged out", "You safely signed out from the platform.");
   };
 
   const toggleDarkMode = () => {
@@ -658,6 +654,10 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const clearNotifications = () => {
+    setNotifications([]);
+  };
+
   const value = useMemo<AppStateValue>(
     () => ({
       allLoads,
@@ -692,6 +692,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       updateProfile,
       markNotificationRead,
       markAllNotificationsRead,
+      clearNotifications,
       refreshLoads,
     }),
     [
