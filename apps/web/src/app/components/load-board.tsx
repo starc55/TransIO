@@ -149,7 +149,7 @@ export function LoadBoard() {
                 Load Board
               </h1>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Live DAT lanes, broker rates, and pickup windows
+                Live lanes, broker rates, and pickup windows
               </p>
             </div>
 

@@ -153,7 +153,10 @@ export function Admin({ view = "overview" }: AdminProps) {
       {(view === "overview" || view === "stats") && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {statCards.map((item) => (
-            <Card key={item.label} className="rounded-lg p-5 bg-card border-border">
+            <Card
+              key={item.label}
+              className="rounded-lg p-5 bg-card border-border"
+            >
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{item.label}</p>
@@ -178,98 +181,98 @@ export function Admin({ view = "overview" }: AdminProps) {
         }
       >
         {(view === "overview" || view === "users") && (
-        <Card className="rounded-lg p-5 sm:p-6 bg-card border-border">
-          <div className="flex items-center gap-2 mb-4">
-            <Users className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold text-foreground">Users</h3>
-          </div>
+          <Card className="rounded-lg p-5 sm:p-6 bg-card border-border">
+            <div className="flex items-center gap-2 mb-4">
+              <Users className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold text-foreground">Users</h3>
+            </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.length === 0 && !isLoading ? (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell
-                    colSpan={4}
-                    className="py-6 text-center text-muted-foreground"
-                  >
-                    No users found
-                  </TableCell>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Created</TableHead>
                 </TableRow>
-              ) : (
-                users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="text-foreground">
-                      {user.full_name || "Unnamed user"}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {user.email}
-                    </TableCell>
-                    <TableCell className="text-foreground">
-                      {formatRoleLabel(user.role)}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(user.created_at).toLocaleDateString("en-US")}
+              </TableHeader>
+              <TableBody>
+                {users.length === 0 && !isLoading ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="py-6 text-center text-muted-foreground"
+                    >
+                      No users found
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </Card>
+                ) : (
+                  users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="text-foreground">
+                        {user.full_name || "Unnamed user"}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {user.email}
+                      </TableCell>
+                      <TableCell className="text-foreground">
+                        {formatRoleLabel(user.role)}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(user.created_at).toLocaleDateString("en-US")}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </Card>
         )}
 
         {(view === "overview" || view === "stats") && (
-        <Card className="rounded-lg p-5 sm:p-6 bg-card border-border">
-          <div className="flex items-center gap-2 mb-4">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold text-foreground">
-              Latest Collector Loads
-            </h3>
-          </div>
+          <Card className="rounded-lg p-5 sm:p-6 bg-card border-border">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold text-foreground">
+                Latest Collector Loads
+              </h3>
+            </div>
 
-          <div className="space-y-3">
-            {allLoads.slice(0, 6).map((load) => (
-              <div
-                key={load.id}
-                className="rounded-md border border-border bg-background p-4"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-medium text-foreground truncate">
-                      {load.origin.city}, {load.origin.state} to{" "}
-                      {load.destination.city}, {load.destination.state}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {load.referenceId} | {load.source} | {load.trailerType}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-primary">
-                      ${load.rate.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(load.receivedAt).toLocaleString("en-US")}
-                    </p>
+            <div className="space-y-3">
+              {allLoads.slice(0, 6).map((load) => (
+                <div
+                  key={load.id}
+                  className="rounded-md border border-border bg-background p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground truncate">
+                        {load.origin.city}, {load.origin.state} to{" "}
+                        {load.destination.city}, {load.destination.state}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {load.referenceId} | {load.source} | {load.trailerType}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-primary">
+                        ${load.rate.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(load.receivedAt).toLocaleString("en-US")}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {allLoads.length === 0 && !isLoadingLoads && (
-              <p className="text-sm text-muted-foreground">
-                Collector loads will appear here after `/ingest` writes data.
-              </p>
-            )}
-          </div>
-        </Card>
+              {allLoads.length === 0 && !isLoadingLoads && (
+                <p className="text-sm text-muted-foreground">
+                  Collector loads will appear here after `/ingest` writes data.
+                </p>
+              )}
+            </div>
+          </Card>
         )}
       </div>
     </div>

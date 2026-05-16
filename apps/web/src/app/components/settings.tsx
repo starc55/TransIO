@@ -145,19 +145,16 @@ export function Settings() {
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm text-foreground">
-                  Login Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={form.email}
-                  readOnly
-                  className="h-10 rounded-md border-border bg-muted text-foreground"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Email changes are managed by Supabase Auth.
-                </p>
+                  <Label htmlFor="email" className="text-sm text-foreground">
+                    Login Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={form.email}
+                    readOnly
+                    className="h-10 rounded-md border-border bg-muted text-foreground"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="text-sm text-foreground">
@@ -292,9 +289,7 @@ export function Settings() {
                 <p className="font-medium text-foreground">
                   {profile?.email || "No active email"}
                 </p>
-                <p className="mt-1 text-xs">
-                  Signed in through Supabase Auth.
-                </p>
+                <p className="mt-1 text-xs">Signed in through Supabase Auth.</p>
               </div>
               <div className="rounded-md border border-border bg-background px-4 py-3">
                 <p className="font-medium text-foreground">
@@ -329,22 +324,6 @@ export function Settings() {
                   {lastLoadsSync
                     ? new Date(lastLoadsSync).toLocaleString("en-US")
                     : "Waiting for first successful sync"}
-                </p>
-              </div>
-              <div className="rounded-md border border-border bg-background px-4 py-3">
-                <p className="font-medium text-foreground">Auth Health</p>
-                <p className="mt-1 text-xs">
-                  {authError || "Supabase authentication is configured"}
-                </p>
-              </div>
-              <div className="rounded-md border border-border bg-background px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <Globe2 className="h-4 w-4 text-primary" />
-                  <p className="font-medium text-foreground">SEO Assets</p>
-                </div>
-                <p className="mt-1 text-xs">
-                  Manifest, robots.txt, sitemap, favicon, and Open Graph meta
-                  are included.
                 </p>
               </div>
             </div>

@@ -183,10 +183,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </div>
               <div className="mt-3 flex items-center justify-between rounded-md border border-sidebar-border bg-sidebar px-3 py-2">
                 <span className="text-xs text-sidebar-foreground/60">
-                  Workspace
+                  TransIO
                 </span>
-                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/70">
-                  v1
+                <span className="text-[11px] font-semibold tracking-[0.14em] text-sidebar-foreground/70">
+                  v1.0
                 </span>
               </div>
             </div>

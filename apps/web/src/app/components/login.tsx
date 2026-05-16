@@ -13,7 +13,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import logoImage from "../../imports/logo.png";
+import logo from "/logo.png";
 import { useAppState } from "../context/app-state";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -31,13 +31,8 @@ export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const navigate = useNavigate();
-  const {
-    authReady,
-    isAuthenticated,
-    login,
-    register,
-    loginWithGoogle,
-  } = useAppState();
+  const { authReady, isAuthenticated, login, register, loginWithGoogle } =
+    useAppState();
 
   if (!authReady) {
     return (
@@ -128,9 +123,9 @@ export function Login() {
         className="relative z-10 w-full max-w-md"
       >
         <div className="mb-6 text-center sm:mb-8">
-          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm sm:h-20 sm:w-20">
+          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-border bg-card shadow-sm sm:h-20 sm:w-20">
             <ImageWithFallback
-              src={logoImage}
+              src={logo}
               alt="TransIO Logo"
               className="h-full w-full object-contain"
             />
@@ -319,11 +314,6 @@ export function Login() {
                 : "Sign In"}
             </Button>
           </form>
-
-          <p className="mt-5 text-center text-xs text-muted-foreground">
-            Production access is managed through Supabase Auth and verified
-            workspace roles.
-          </p>
         </div>
       </motion.div>
     </div>

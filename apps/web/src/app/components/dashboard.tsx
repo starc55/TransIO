@@ -63,8 +63,8 @@ export function Dashboard() {
               Dashboard
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">
-              Live freight activity, saved loads, booked loads, and admin
-              access in one dispatch view.
+              Live freight activity, saved loads, booked loads, and admin access
+              in one dispatch view.
             </p>
           </div>
           <div className="rounded-md border border-border bg-background px-4 py-3 text-xs text-muted-foreground sm:text-sm">
@@ -108,7 +108,9 @@ export function Dashboard() {
                 <div
                   className={`rounded-md p-3 ring-1 ring-inset ring-border ${stat.bgColor}`}
                 >
-                  <stat.icon className={`h-6 w-6 sm:h-7 sm:w-7 ${stat.color}`} />
+                  <stat.icon
+                    className={`h-6 w-6 sm:h-7 sm:w-7 ${stat.color}`}
+                  />
                 </div>
               </div>
             </Card>
@@ -137,7 +139,7 @@ export function Dashboard() {
                 Browse Load Board
               </h4>
               <p className="text-xs text-muted-foreground sm:text-sm">
-                See live loads coming from the DAT extension
+                See live loads
               </p>
             </Link>
             <Link
