@@ -58,30 +58,40 @@ export function CommandPalette({ open, onOpenChange }) {
     const baseCommands = [
       {
         label: "Go to Dashboard",
+        hint: "Open the operations overview with load counts, activity, and quick actions.",
+        shortcut: "G D",
         keywords: "home overview operations stats g d",
         icon: Gauge,
         action: () => navigate("/dashboard"),
       },
       {
         label: "Go to Loads",
+        hint: "Jump to the live freight load board and review available lanes.",
+        shortcut: "G L",
         keywords: "load board freight search g l",
         icon: ListFilter,
         action: () => navigate("/loads"),
       },
       {
         label: "Go to Settings",
+        hint: "Manage account profile, role details, display mode, and workspace preferences.",
+        shortcut: "Settings",
         keywords: "account preferences profile",
         icon: Settings,
         action: () => navigate("/settings"),
       },
       {
         label: "Focus Search",
+        hint: "Open the Loads page and place the cursor directly in the load search field.",
+        shortcut: "/",
         keywords: "load search slash filter",
         icon: Search,
         action: focusSearch,
       },
       {
         label: "Logout",
+        hint: "Sign out of the current TransIO session and return to the login page.",
+        shortcut: "Session",
         keywords: "sign out session",
         icon: LogOut,
         action: async () => {
@@ -89,7 +99,9 @@ export function CommandPalette({ open, onOpenChange }) {
             await logout();
             navigate("/login", { replace: true });
           } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Logout failed");
+            toast.error(
+              error instanceof Error ? error.message : "Logout failed"
+            );
           }
         },
       },
@@ -103,12 +115,16 @@ export function CommandPalette({ open, onOpenChange }) {
       ...baseCommands.slice(0, 2),
       {
         label: "Go to Admin",
+        hint: "Open admin stats, users, collector activity, and operational controls.",
+        shortcut: "G A",
         keywords: "admin panel stats g a",
         icon: Shield,
         action: () => navigate("/admin"),
       },
       {
         label: "Go to Users",
+        hint: "Review registered users, roles, and team account records.",
+        shortcut: "Users",
         keywords: "admin users team accounts",
         icon: Users,
         action: () => navigate("/admin/users"),
@@ -120,6 +136,7 @@ export function CommandPalette({ open, onOpenChange }) {
   const filteredCommands = useMemo(() => {
     return commands.filter((command) => scoreCommand(command, query));
   }, [commands, query]);
+  const selectedCommand = filteredCommands[selectedIndex];
 
   useEffect(() => {
     if (!open) {
@@ -192,7 +209,7 @@ export function CommandPalette({ open, onOpenChange }) {
       onMouseDown={() => onOpenChange(false)}
     >
       <div
-        className="w-full max-w-xl overflow-hidden rounded-xl border border-white/10 bg-zinc-950/92 text-white shadow-2xl shadow-black/40"
+        className="w-full max-w-2xl overflow-hidden rounded-xl border border-white/10 bg-zinc-950/92 text-white shadow-2xl shadow-black/40"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
@@ -214,38 +231,116 @@ export function CommandPalette({ open, onOpenChange }) {
           </button>
         </div>
 
-        <div className="max-h-80 overflow-y-auto p-2">
-          {filteredCommands.length === 0 ? (
-            <div className="px-3 py-8 text-center text-sm text-white/50">
-              No commands found
-            </div>
-          ) : (
-            filteredCommands.map((command, index) => (
-              <button
-                key={command.label}
-                type="button"
-                onClick={() => runCommand(command)}
-                onMouseEnter={() => setSelectedIndex(index)}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
-                  index === selectedIndex
-                    ? "bg-white text-black"
-                    : "text-white/82 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                {React.createElement(command.icon, {
-                  className: "h-4 w-4 shrink-0",
-                })}
-                <span className="font-medium">{command.label}</span>
-              </button>
-            ))
-          )}
+        <div className="grid max-h-[24rem] min-h-72 sm:grid-cols-[minmax(0,1fr)_16rem]">
+          <div className="overflow-y-auto p-2">
+            {filteredCommands.length === 0 ? (
+              <div className="px-3 py-8 text-center text-sm text-white/50">
+                No commands found
+              </div>
+            ) : (
+              filteredCommands.map((command, index) => (
+                <button
+                  key={command.label}
+                  type="button"
+                  title={command.hint}
+                  onClick={() => runCommand(command)}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  onFocus={() => setSelectedIndex(index)}
+                  className={`group flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
+                    index === selectedIndex
+                      ? "bg-white text-black shadow-lg shadow-white/10"
+                      : "text-white/82 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  <span
+                    className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition ${
+                      index === selectedIndex
+                        ? "border-black/10 bg-black text-white"
+                        : "border-white/10 bg-white/5 text-white/72 group-hover:border-white/20 group-hover:text-white"
+                    }`}
+                  >
+                    {React.createElement(command.icon, {
+                      className: "h-4 w-4 shrink-0",
+                    })}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="font-medium">{command.label}</span>
+                      <span
+                        className={`hidden rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] sm:inline-flex ${
+                          index === selectedIndex
+                            ? "border-black/15 bg-black/5 text-black/65"
+                            : "border-white/10 bg-white/5 text-white/42"
+                        }`}
+                      >
+                        {command.shortcut}
+                      </span>
+                    </span>
+                    <span
+                      className={`mt-1 line-clamp-2 text-xs leading-5 sm:hidden ${
+                        index === selectedIndex
+                          ? "text-black/65"
+                          : "text-white/45"
+                      }`}
+                    >
+                      {command.hint}
+                    </span>
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+
+          <aside className="hidden border-l border-white/10 bg-white/[0.03] p-4 sm:block">
+            {selectedCommand ? (
+              <div className="flex h-full flex-col justify-between">
+                <div>
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white text-black shadow-lg shadow-white/10">
+                    {React.createElement(selectedCommand.icon, {
+                      className: "h-5 w-5",
+                    })}
+                  </div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/42">
+                    Command hint
+                  </p>
+                  <h3 className="mt-2 text-lg font-semibold text-white">
+                    {selectedCommand.label}
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-white/62">
+                    {selectedCommand.hint}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-white/10 bg-black/35 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/38">
+                    Shortcut
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-white">
+                    {selectedCommand.shortcut}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex h-full items-center justify-center text-center text-sm text-white/42">
+                Hover a command to see details
+              </div>
+            )}
+          </aside>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 border-t border-white/10 px-4 py-3 text-[11px] uppercase tracking-[0.14em] text-white/45">
-          <span>Ctrl K</span>
-          <span>/ Search</span>
-          <span>G D Dashboard</span>
-          <span>G L Loads</span>
+          <span className="rounded border border-white/10 px-1.5 py-0.5">
+            Ctrl K
+          </span>
+          <span className="rounded border border-white/10 px-1.5 py-0.5">
+            / Search
+          </span>
+          <span className="rounded border border-white/10 px-1.5 py-0.5">
+            G D Dashboard
+          </span>
+          <span className="rounded border border-white/10 px-1.5 py-0.5">
+            G L Loads
+          </span>
         </div>
       </div>
     </div>
