@@ -1,5 +1,17 @@
 import React from "react";
 
+function renderIcon(Icon) {
+  if (!Icon) {
+    return null;
+  }
+
+  if (React.isValidElement(Icon)) {
+    return Icon;
+  }
+
+  return React.createElement(Icon, { className: "h-5 w-5" });
+}
+
 export function EmptyState({
   title,
   description,
@@ -11,7 +23,7 @@ export function EmptyState({
     <div className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-8 text-center shadow-sm">
       {Icon ? (
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-foreground">
-          {typeof Icon === "function" ? <Icon className="h-5 w-5" /> : Icon}
+          {renderIcon(Icon)}
         </div>
       ) : null}
       <h3 className="text-base font-semibold text-foreground">{title}</h3>

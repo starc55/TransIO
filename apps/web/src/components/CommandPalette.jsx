@@ -232,7 +232,9 @@ export function CommandPalette({ open, onOpenChange }) {
                     : "text-white/82 hover:bg-white/10 hover:text-white"
                 }`}
               >
-                <command.icon className="h-4 w-4 shrink-0" />
+                {React.createElement(command.icon, {
+                  className: "h-4 w-4 shrink-0",
+                })}
                 <span className="font-medium">{command.label}</span>
               </button>
             ))

@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router";
 import { Layout } from "./components/layout";
 import React, { lazy, Suspense } from "react";
 import { CardSkeleton } from "../components/ui/CardSkeleton";
+import { RouteErrorBoundary } from "./components/app-error-boundary";
 
 const Landing = lazy(() =>
   import("./components/landing").then((module) => ({ default: module.Landing }))
@@ -62,6 +63,7 @@ function withSuspense(component: React.ReactNode) {
 export const router = createBrowserRouter([
   {
     path: "/",
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, Component: withSuspense(<Landing />) },
       { path: "login", Component: withSuspense(<Login />) },
@@ -73,6 +75,7 @@ export const router = createBrowserRouter([
       { path: "reset-password", Component: withSuspense(<ResetPassword />) },
       {
         Component: Layout,
+        errorElement: <RouteErrorBoundary />,
         children: [
           { path: "dashboard", Component: withSuspense(<Dashboard />) },
           { path: "loads", Component: withSuspense(<Loads />) },
