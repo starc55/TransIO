@@ -7,7 +7,6 @@ import {
   Mail,
   Navigation,
   ChevronDown,
-  CircleDot,
   Building2,
   ArrowRight,
 } from "lucide-react";
@@ -19,6 +18,7 @@ import { cn } from "./ui/utils";
 import React from "react";
 import { useAppState } from "../context/app-state";
 import { toast } from "sonner";
+import { LoadMap } from "./load-map";
 
 interface LoadCardProps {
   load: Load;
@@ -336,20 +336,7 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
                   </div>
 
                   <div className="space-y-3">
-                    <div className="rounded-lg border border-border bg-card p-4">
-                      <div className="text-center">
-                        <CircleDot className="mx-auto mb-2 h-6 w-6 text-foreground" />
-                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                          Lane Snapshot
-                        </p>
-                        <p className="mt-2 text-sm font-medium text-foreground">
-                          {load.origin.city} to {load.destination.city}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {load.distance} miles | {load.trailerType}
-                        </p>
-                      </div>
-                    </div>
+                    <LoadMap load={load} />
 
                     <div className="rounded-lg border border-border bg-card p-3">
                       <div className="mb-3 flex items-center justify-between">
