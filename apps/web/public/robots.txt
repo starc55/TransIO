@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://transio.app/sitemap.xml
+Sitemap: https://trans-io.com/sitemap.xml

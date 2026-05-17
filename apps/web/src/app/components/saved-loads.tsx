@@ -1,9 +1,9 @@
 import { Bookmark } from "lucide-react";
-import { Card } from "./ui/card";
 import { useAppState } from "../context/app-state";
 import { LoadCard } from "./load-card";
 import { useState } from "react";
 import React from "react";
+import { EmptyState } from "../../components/ui/EmptyState";
 
 export function SavedLoads() {
   const [expandedLoadId, setExpandedLoadId] = useState<string | null>(null);
@@ -37,20 +37,15 @@ export function SavedLoads() {
       </div>
 
       {visibleLoads.length === 0 ? (
-        <Card className="rounded-lg border border-border bg-card p-8 text-center sm:p-12">
-          <div className="mx-auto max-w-md">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-lg border border-border bg-muted sm:h-20 sm:w-20">
-              <Bookmark className="h-8 w-8 text-primary sm:h-10 sm:w-10" />
-            </div>
-            <h3 className="mb-2 text-lg text-foreground sm:text-xl">
-              No Saved Loads
-            </h3>
-            <p className="text-sm text-muted-foreground sm:text-base">
-              You haven't saved any loads yet. Click the bookmark icon on any
-              load card to save it for later.
-            </p>
-          </div>
-        </Card>
+        <EmptyState
+          title={searchQuery.trim() ? "No saved search results" : "No saved loads"}
+          description={
+            searchQuery.trim()
+              ? "No saved loads match the current search. Try another lane, broker, or load reference."
+              : "Click the bookmark icon on any load card to save freight opportunities for later."
+          }
+          icon={Bookmark}
+        />
       ) : (
         <div className="space-y-3">
           {visibleLoads.map((load) => (

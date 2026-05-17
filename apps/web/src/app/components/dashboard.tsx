@@ -4,10 +4,19 @@ import { Link } from "react-router";
 import React from "react";
 import { motion } from "motion/react";
 import { useAppState } from "../context/app-state";
+import { CardSkeleton } from "../../components/ui/CardSkeleton";
+import { EmptyState } from "../../components/ui/EmptyState";
 
 export function Dashboard() {
-  const { savedLoadIds, bookedLoadIds, allLoads, isAdmin, lastLoadsSync } =
-    useAppState();
+  const {
+    savedLoadIds,
+    bookedLoadIds,
+    allLoads,
+    isAdmin,
+    lastLoadsSync,
+    isLoadingLoads,
+  } = useAppState();
+  const isInitialLoadsLoading = isLoadingLoads && allLoads.length === 0;
 
   const stats = [
     {
@@ -79,7 +88,11 @@ export function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 sm:gap-6">
-        {stats.map((stat, index) => (
+        {isInitialLoadsLoading
+          ? Array.from({ length: 4 }).map((_, index) => (
+              <CardSkeleton key={index} rows={2} />
+            ))
+          : stats.map((stat, index) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 14 }}
@@ -115,7 +128,7 @@ export function Dashboard() {
               </div>
             </Card>
           </motion.div>
-        ))}
+            ))}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
@@ -187,10 +200,11 @@ export function Dashboard() {
           </div>
           <div className="space-y-4">
             {recentActivity.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Collector loads will appear here after the backend starts
-                receiving data.
-              </p>
+              <EmptyState
+                title="No recent load activity"
+                description="Collector loads will appear here after the backend starts receiving freight data."
+                icon={Package}
+              />
             ) : (
               recentActivity.map((activity) => (
                 <div

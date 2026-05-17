@@ -5,10 +5,20 @@ import { Sidebar } from "./sidebar";
 import React from "react";
 import { useAppState } from "../context/app-state";
 import { motion } from "motion/react";
+import { CommandPalette } from "../../components/CommandPalette";
+import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { authReady, profileLoading, isAuthenticated } = useAppState();
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const { authReady, profileLoading, isAuthenticated, isAdmin } = useAppState();
+
+  useKeyboardShortcuts({
+    isAdmin,
+    isCommandPaletteOpen: commandPaletteOpen,
+    onOpenCommandPalette: () => setCommandPaletteOpen(true),
+    onCloseCommandPalette: () => setCommandPaletteOpen(false),
+  });
 
   useEffect(() => {
     const handleResize = () => {
@@ -42,6 +52,10 @@ export function Layout() {
       <TopNav
         onMenuClick={() => setSidebarOpen(!sidebarOpen)}
         sidebarOpen={sidebarOpen}
+      />
+      <CommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
       />
       <div className="relative flex flex-1 overflow-hidden">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />

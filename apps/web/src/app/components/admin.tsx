@@ -17,9 +17,19 @@ import {
   type AdminUser,
 } from "../lib/api";
 import { formatRoleLabel, useAppState } from "../context/app-state";
-import { BarChart3, RefreshCw, ShieldCheck, Users, Boxes } from "lucide-react";
+import {
+  BarChart3,
+  RefreshCw,
+  ShieldCheck,
+  Users,
+  Boxes,
+  CreditCard,
+} from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
+import { CardSkeleton } from "../../components/ui/CardSkeleton";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { TableSkeleton } from "../../components/ui/TableSkeleton";
 
 type AdminView = "overview" | "users" | "stats";
 
@@ -42,6 +52,7 @@ export function Admin({ view = "overview" }: AdminProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const permissionToastShownRef = React.useRef(false);
+  const subscriptions: AdminUser[] = [];
 
   const loadAdminData = async () => {
     if (!currentUserId) {
@@ -98,7 +109,7 @@ export function Admin({ view = "overview" }: AdminProps) {
   }
 
   if (!isAdmin) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const statCards = [
@@ -151,26 +162,48 @@ export function Admin({ view = "overview" }: AdminProps) {
       )}
 
       {(view === "overview" || view === "stats") && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {statCards.map((item) => (
-            <Card
-              key={item.label}
-              className="rounded-lg p-5 bg-card border-border"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{item.label}</p>
-                  <h2 className="mt-2 text-3xl font-bold text-foreground">
-                    {isLoading ? "..." : item.value.toLocaleString()}
-                  </h2>
-                </div>
-                <div className="p-3 rounded-md bg-muted">
-                  <item.icon className="h-6 w-6 text-primary" />
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+        <>
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <CardSkeleton key={index} rows={2} />
+              ))}
+            </div>
+          ) : !stats ? (
+            <EmptyState
+              title={error ? "Admin data unavailable" : "No admin data"}
+              description={
+                error
+                  ? "The admin API did not return data. Check server connectivity and role permissions."
+                  : "Admin stats will appear after the backend returns load, user, and subscription data."
+              }
+              icon={BarChart3}
+            />
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {statCards.map((item) => (
+                <Card
+                  key={item.label}
+                  className="rounded-lg border-border bg-card p-5"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        {item.label}
+                      </p>
+                      <h2 className="mt-2 text-3xl font-bold text-foreground">
+                        {item.value.toLocaleString()}
+                      </h2>
+                    </div>
+                    <div className="rounded-md bg-muted p-3">
+                      <item.icon className="h-6 w-6 text-primary" />
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <div
@@ -187,27 +220,26 @@ export function Admin({ view = "overview" }: AdminProps) {
               <h3 className="text-lg font-semibold text-foreground">Users</h3>
             </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Created</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.length === 0 && !isLoading ? (
+            {isLoading ? (
+              <TableSkeleton columns={4} rows={5} />
+            ) : users.length === 0 ? (
+              <EmptyState
+                title="No users"
+                description="Team members will appear here after users register and profiles are created in Supabase."
+                icon={Users}
+              />
+            ) : (
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="py-6 text-center text-muted-foreground"
-                    >
-                      No users found
-                    </TableCell>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Created</TableHead>
                   </TableRow>
-                ) : (
-                  users.map((user) => (
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="text-foreground">
                         {user.full_name || "Unnamed user"}
@@ -222,10 +254,43 @@ export function Admin({ view = "overview" }: AdminProps) {
                         {new Date(user.created_at).toLocaleDateString("en-US")}
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </Card>
+        )}
+
+        {(view === "overview" || view === "users") && (
+          <Card className="rounded-lg border-border bg-card p-5 sm:p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold text-foreground">
+                Subscriptions
+              </h3>
+            </div>
+
+            {isLoading ? (
+              <TableSkeleton columns={4} rows={3} />
+            ) : subscriptions.length === 0 ? (
+              <EmptyState
+                title="No subscriptions"
+                description="Subscription records will appear here after billing data is connected to the production backend."
+                icon={CreditCard}
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Renewal</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody />
+              </Table>
+            )}
           </Card>
         )}
 
@@ -267,9 +332,11 @@ export function Admin({ view = "overview" }: AdminProps) {
               ))}
 
               {allLoads.length === 0 && !isLoadingLoads && (
-                <p className="text-sm text-muted-foreground">
-                  Collector loads will appear here after `/ingest` writes data.
-                </p>
+                <EmptyState
+                  title="No collector loads"
+                  description="Collector loads will appear here after /ingest writes freight data into the production pipeline."
+                  icon={Boxes}
+                />
               )}
             </div>
           </Card>

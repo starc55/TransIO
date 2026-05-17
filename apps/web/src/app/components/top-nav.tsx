@@ -146,6 +146,7 @@ export function TopNav({ onMenuClick, sidebarOpen }: TopNavProps) {
         <div className="relative flex-1">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            id="load-search-input"
             placeholder="Search loads, broker, lane, tags..."
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}

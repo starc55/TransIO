@@ -3,6 +3,7 @@ import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { useAppState } from "../context/app-state";
 import React from "react";
+import { EmptyState } from "../../components/ui/EmptyState";
 
 export function MyLoads() {
   const { bookedLoads } = useAppState();
@@ -23,12 +24,11 @@ export function MyLoads() {
 
       <div className="grid max-w-5xl gap-3">
         {bookedLoads.length === 0 ? (
-          <Card className="rounded-lg border border-border bg-card p-8 sm:p-10">
-            <p className="text-sm text-muted-foreground">
-              No booked loads yet. Click "Book Now" on the Load Board page to
-              add them here.
-            </p>
-          </Card>
+          <EmptyState
+            title="No booked loads"
+            description='Click "Book Now" on the Load Board page to add active freight opportunities here.'
+            icon={Package}
+          />
         ) : (
           bookedLoads.map((load, index) => (
             <Card

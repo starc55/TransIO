@@ -1,0 +1,253 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router";
+import {
+  Gauge,
+  ListFilter,
+  LogOut,
+  Search,
+  Settings,
+  Shield,
+  Users,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
+import { useAppState } from "../app/context/app-state";
+
+function scoreCommand(command, query) {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  const haystack = `${command.label} ${command.keywords || ""}`.toLowerCase();
+  let cursor = 0;
+
+  for (const character of normalizedQuery) {
+    cursor = haystack.indexOf(character, cursor);
+
+    if (cursor === -1) {
+      return false;
+    }
+
+    cursor += 1;
+  }
+
+  return true;
+}
+
+export function CommandPalette({ open, onOpenChange }) {
+  const navigate = useNavigate();
+  const inputRef = useRef(null);
+  const { isAdmin, logout } = useAppState();
+  const [query, setQuery] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const focusSearch = () => {
+    navigate("/loads");
+    window.setTimeout(() => {
+      const searchInput = document.querySelector("#load-search-input");
+
+      if (searchInput instanceof HTMLElement) {
+        searchInput.focus();
+      }
+    }, 80);
+  };
+
+  const commands = useMemo(() => {
+    const baseCommands = [
+      {
+        label: "Go to Dashboard",
+        keywords: "home overview operations stats g d",
+        icon: Gauge,
+        action: () => navigate("/dashboard"),
+      },
+      {
+        label: "Go to Loads",
+        keywords: "load board freight search g l",
+        icon: ListFilter,
+        action: () => navigate("/loads"),
+      },
+      {
+        label: "Go to Settings",
+        keywords: "account preferences profile",
+        icon: Settings,
+        action: () => navigate("/settings"),
+      },
+      {
+        label: "Focus Search",
+        keywords: "load search slash filter",
+        icon: Search,
+        action: focusSearch,
+      },
+      {
+        label: "Logout",
+        keywords: "sign out session",
+        icon: LogOut,
+        action: async () => {
+          try {
+            await logout();
+            navigate("/login", { replace: true });
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Logout failed");
+          }
+        },
+      },
+    ];
+
+    if (!isAdmin) {
+      return baseCommands;
+    }
+
+    return [
+      ...baseCommands.slice(0, 2),
+      {
+        label: "Go to Admin",
+        keywords: "admin panel stats g a",
+        icon: Shield,
+        action: () => navigate("/admin"),
+      },
+      {
+        label: "Go to Users",
+        keywords: "admin users team accounts",
+        icon: Users,
+        action: () => navigate("/admin/users"),
+      },
+      ...baseCommands.slice(2),
+    ];
+  }, [isAdmin, logout, navigate]);
+
+  const filteredCommands = useMemo(() => {
+    return commands.filter((command) => scoreCommand(command, query));
+  }, [commands, query]);
+
+  useEffect(() => {
+    if (!open) {
+      setQuery("");
+      setSelectedIndex(0);
+      return;
+    }
+
+    window.setTimeout(() => inputRef.current?.focus(), 0);
+  }, [open]);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [query]);
+
+  useEffect(() => {
+    if (selectedIndex > filteredCommands.length - 1) {
+      setSelectedIndex(Math.max(filteredCommands.length - 1, 0));
+    }
+  }, [filteredCommands.length, selectedIndex]);
+
+  if (!open) {
+    return null;
+  }
+
+  const runCommand = async (command) => {
+    onOpenChange(false);
+    await command.action();
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      onOpenChange(false);
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setSelectedIndex((current) =>
+        filteredCommands.length === 0
+          ? 0
+          : (current + 1) % filteredCommands.length
+      );
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setSelectedIndex((current) =>
+        filteredCommands.length === 0
+          ? 0
+          : (current - 1 + filteredCommands.length) % filteredCommands.length
+      );
+      return;
+    }
+
+    if (event.key === "Enter" && filteredCommands[selectedIndex]) {
+      event.preventDefault();
+      runCommand(filteredCommands[selectedIndex]);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-start justify-center bg-black/60 px-3 pt-24 backdrop-blur-xl sm:px-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Command palette"
+      onMouseDown={() => onOpenChange(false)}
+    >
+      <div
+        className="w-full max-w-xl overflow-hidden rounded-xl border border-white/10 bg-zinc-950/92 text-white shadow-2xl shadow-black/40"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
+          <Search className="h-4 w-4 text-white/55" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={handleKeyDown}
+            className="h-9 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/40"
+            placeholder="Search commands..."
+          />
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="rounded-md p-1.5 text-white/55 transition hover:bg-white/10 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="max-h-80 overflow-y-auto p-2">
+          {filteredCommands.length === 0 ? (
+            <div className="px-3 py-8 text-center text-sm text-white/50">
+              No commands found
+            </div>
+          ) : (
+            filteredCommands.map((command, index) => (
+              <button
+                key={command.label}
+                type="button"
+                onClick={() => runCommand(command)}
+                onMouseEnter={() => setSelectedIndex(index)}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
+                  index === selectedIndex
+                    ? "bg-white text-black"
+                    : "text-white/82 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                <command.icon className="h-4 w-4 shrink-0" />
+                <span className="font-medium">{command.label}</span>
+              </button>
+            ))
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 border-t border-white/10 px-4 py-3 text-[11px] uppercase tracking-[0.14em] text-white/45">
+          <span>Ctrl K</span>
+          <span>/ Search</span>
+          <span>G D Dashboard</span>
+          <span>G L Loads</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default CommandPalette;

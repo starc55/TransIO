@@ -21,8 +21,12 @@ import React from "react";
 
 type AuthMode = "login" | "register";
 
-export function Login() {
-  const [mode, setMode] = useState<AuthMode>("login");
+interface LoginProps {
+  initialMode?: AuthMode;
+}
+
+export function Login({ initialMode = "login" }: LoginProps) {
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +47,7 @@ export function Login() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -90,7 +94,7 @@ export function Login() {
       }
 
       if (result.success) {
-        navigate("/");
+        navigate("/dashboard");
       }
     } catch (error) {
       toast.error(

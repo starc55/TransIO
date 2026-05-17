@@ -14,6 +14,8 @@ import {
 import { useAppState } from "../context/app-state";
 import { motion } from "motion/react";
 import React from "react";
+import { CardSkeleton } from "../../components/ui/CardSkeleton";
+import { EmptyState } from "../../components/ui/EmptyState";
 
 type SortOption = "rate-high" | "rate-low" | "distance" | "date";
 
@@ -138,6 +140,16 @@ export function LoadBoard() {
 
     return sortLoads(filtered, sortBy);
   }, [activeFilters, allLoads, searchQuery, sortBy]);
+  const hasActiveFilters = Object.values(activeFilters).some(Boolean);
+  const isInitialLoading = isLoadingLoads && allLoads.length === 0;
+  const emptyTitle =
+    searchQuery.trim() || hasActiveFilters
+      ? "No matching loads"
+      : "No loads available";
+  const emptyDescription =
+    searchQuery.trim() || hasActiveFilters
+      ? "No freight loads match the current search or filters. Adjust the lane, broker, equipment, or rate filters and try again."
+      : "Collector loads will appear here once freight data is available from Supabase or the DAT extension workflow.";
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -212,14 +224,20 @@ export function LoadBoard() {
             </div>
           )}
 
-          {sortedLoads.length === 0 ? (
-            <div className="rounded-lg border border-border bg-card px-6 py-10 text-center">
-              <p className="text-sm text-muted-foreground">
-                {isLoadingLoads
-                  ? "Collector loads are loading..."
-                  : "No DAT loads match your filters"}
-              </p>
+          {isInitialLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <CardSkeleton key={index} rows={2} />
+              ))}
             </div>
+          ) : sortedLoads.length === 0 ? (
+            <EmptyState
+              title={emptyTitle}
+              description={emptyDescription}
+              actionLabel="Refresh loads"
+              onAction={() => refreshLoads()}
+              icon={Radio}
+            />
           ) : (
             <>
               <div className="hidden rounded-md border border-border bg-muted px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground lg:grid lg:grid-cols-[150px_minmax(220px,1fr)_142px_110px_132px]">

@@ -24,7 +24,7 @@ interface SidebarProps {
 }
 
 const baseMenuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: PackageSearch, label: "Load Board", path: "/loads" },
   { icon: Package, label: "My Loads", path: "/my-loads" },
   { icon: Bookmark, label: "Saved Loads", path: "/saved-loads" },
@@ -123,7 +123,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  end={item.path === "/"}
+                  end={item.path === "/dashboard"}
                   onClick={() => onClose?.()}
                   className={({ isActive }) =>
                     cn(
