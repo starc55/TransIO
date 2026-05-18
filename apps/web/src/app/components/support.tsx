@@ -4,7 +4,6 @@ import {
   LifeBuoy,
   Mail,
   MessageSquare,
-  Phone,
   Send,
   Users,
 } from "lucide-react";
@@ -16,8 +15,7 @@ import { Textarea } from "./ui/textarea";
 import { useAppState } from "../context/app-state";
 import { toast } from "sonner";
 
-const supportEmail = "support@transio.app";
-const supportPhone = "+1 (555) 014-7780";
+const supportEmail = "orziyevogabek67@gmail.com";
 
 export function Support() {
   const { profile } = useAppState();
@@ -157,13 +155,6 @@ export function Support() {
               >
                 <Mail className="h-4 w-4 text-muted-foreground" />
                 {supportEmail}
-              </a>
-              <a
-                href={`tel:${supportPhone}`}
-                className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-foreground hover:bg-accent"
-              >
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                {supportPhone}
               </a>
             </div>
           </Card>
