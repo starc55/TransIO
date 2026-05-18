@@ -1,6 +1,6 @@
 # TransIO API
 
-Express service for DAT extension ingest and admin reporting.
+Express service for load collector ingest and admin reporting.
 
 ## Local Setup
 
