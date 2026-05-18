@@ -1,5 +1,6 @@
 const express = require("express");
 const { supabase } = require("../services/supabase");
+const { deleteExpiredLoads } = require("../services/load-retention");
 
 const router = express.Router();
 
@@ -44,6 +45,8 @@ async function countRows(table, queryBuilder) {
 
 router.get("/stats", requireAdmin, async (_req, res) => {
   try {
+    await deleteExpiredLoads(supabase);
+
     const [totalLoads, totalUsers, activeSubscriptions] = await Promise.all([
       countRows("loads"),
       countRows("users"),

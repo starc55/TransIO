@@ -4,6 +4,7 @@ import { LoadCard } from "./load-card";
 import { useState } from "react";
 import React from "react";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { formatLoadLocation } from "../data/loads";
 
 export function SavedLoads() {
   const [expandedLoadId, setExpandedLoadId] = useState<string | null>(null);
@@ -12,8 +13,8 @@ export function SavedLoads() {
   const visibleLoads = savedLoads.filter((load) =>
     [
       load.id,
-      load.origin.city,
-      load.destination.city,
+      formatLoadLocation(load.origin),
+      formatLoadLocation(load.destination),
       load.broker,
       ...load.tags,
     ]

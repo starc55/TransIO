@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
@@ -9,15 +9,140 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { Filter } from "lucide-react";
+import { Filter, MapPin } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import React from "react";
 
 interface FilterPanelProps {
   onFilter: (filters: any) => void;
+  locationOptions?: string[];
 }
 
-export function FilterPanel({ onFilter }: FilterPanelProps) {
+interface LocationSuggestion {
+  label: string;
+  value: string;
+  hint?: string;
+}
+
+const COMMON_LOCATION_OPTIONS: LocationSuggestion[] = [
+  { label: "Los Angeles, CA", value: "Los Angeles", hint: "City" },
+  { label: "Los Angeles County, CA", value: "Los Angeles", hint: "County" },
+  { label: "Port of Los Angeles, CA", value: "Los Angeles", hint: "Port" },
+  { label: "Long Beach, CA", value: "Long Beach", hint: "Nearby port" },
+  { label: "Ontario, CA", value: "Ontario", hint: "Inland Empire" },
+  { label: "Chicago, IL", value: "Chicago", hint: "City" },
+  { label: "Dallas, TX", value: "Dallas", hint: "City" },
+  { label: "Atlanta, GA", value: "Atlanta", hint: "City" },
+  { label: "Houston, TX", value: "Houston", hint: "City" },
+  { label: "Phoenix, AZ", value: "Phoenix", hint: "City" },
+];
+
+function normalizeLocationSearch(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/los\s+anjeles/g, "los angeles")
+    .replace(/anjeles/g, "angeles")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function matchesLocationSuggestion(option: LocationSuggestion, query: string) {
+  const normalizedQuery = normalizeLocationSearch(query);
+
+  if (!normalizedQuery) {
+    return false;
+  }
+
+  const normalizedLabel = normalizeLocationSearch(option.label);
+  const normalizedValue = normalizeLocationSearch(option.value);
+  const aliasLabel = normalizeLocationSearch(
+    option.label.replace(/angeles/gi, "anjeles")
+  );
+
+  return (
+    normalizedLabel.includes(normalizedQuery) ||
+    normalizedValue.includes(normalizedQuery) ||
+    aliasLabel.includes(normalizedQuery)
+  );
+}
+
+function LocationSuggestInput({
+  id,
+  label,
+  placeholder,
+  value,
+  options,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  placeholder: string;
+  value: string;
+  options: LocationSuggestion[];
+  onChange: (value: string) => void;
+}) {
+  const [isFocused, setIsFocused] = useState(false);
+  const suggestions = useMemo(() => {
+    if (!value.trim()) {
+      return [];
+    }
+
+    return options
+      .filter((option) => matchesLocationSuggestion(option, value))
+      .slice(0, 6);
+  }, [options, value]);
+  const showSuggestions = isFocused && suggestions.length > 0;
+
+  return (
+    <div className="relative space-y-1.5">
+      <Label htmlFor={id} className="text-xs text-foreground sm:text-sm">
+        {label}
+      </Label>
+      <Input
+        id={id}
+        placeholder={placeholder}
+        value={value}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => window.setTimeout(() => setIsFocused(false), 120)}
+        onChange={(event) => onChange(event.target.value)}
+        autoComplete="off"
+        className="h-9 rounded-md border-border bg-input-background text-sm text-foreground placeholder:text-muted-foreground"
+      />
+
+      {showSuggestions && (
+        <div className="absolute left-0 right-0 top-full z-40 mt-1 max-h-56 overflow-auto rounded-md border border-border bg-popover p-1 shadow-xl">
+          {suggestions.map((option) => (
+            <button
+              key={`${id}-${option.label}`}
+              type="button"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                onChange(option.value);
+                setIsFocused(false);
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left hover:bg-accent"
+            >
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm text-foreground">
+                  {option.label}
+                </span>
+                {option.hint && (
+                  <span className="block truncate text-[11px] text-muted-foreground">
+                    {option.hint}
+                  </span>
+                )}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function FilterPanel({ onFilter, locationOptions = [] }: FilterPanelProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     origin: "",
@@ -68,6 +193,29 @@ export function FilterPanel({ onFilter }: FilterPanelProps) {
 
     return String(value).trim() !== "";
   }).length;
+  const suggestions = useMemo<LocationSuggestion[]>(() => {
+    const items = new Map<string, LocationSuggestion>();
+
+    locationOptions.forEach((option) => {
+      const label = option.trim();
+
+      if (!label) {
+        return;
+      }
+
+      items.set(label.toLowerCase(), {
+        label,
+        value: label,
+        hint: "Available lane",
+      });
+    });
+
+    COMMON_LOCATION_OPTIONS.forEach((option) => {
+      items.set(option.label.toLowerCase(), option);
+    });
+
+    return Array.from(items.values());
+  }, [locationOptions]);
 
   return (
     <div className="border-b border-border bg-card/85">
@@ -95,7 +243,7 @@ export function FilterPanel({ onFilter }: FilterPanelProps) {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
-            className="overflow-hidden"
+            className="overflow-visible"
           >
             <div className="px-3 pb-3 sm:px-4 md:px-5">
               <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
@@ -111,36 +259,25 @@ export function FilterPanel({ onFilter }: FilterPanelProps) {
                 </div>
 
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="origin" className="text-xs sm:text-sm text-foreground">
-                      Origin
-                    </Label>
-                    <Input
-                      id="origin"
-                      placeholder="City or State"
-                      value={filters.origin}
-                      onChange={(e) => handleFilterChange("origin", e.target.value)}
-                      className="h-9 rounded-md border-border bg-input-background text-sm text-foreground placeholder:text-muted-foreground"
-                    />
-                  </div>
+                  <LocationSuggestInput
+                    id="origin"
+                    label="Origin"
+                    placeholder="City or State"
+                    value={filters.origin}
+                    options={suggestions}
+                    onChange={(value) => handleFilterChange("origin", value)}
+                  />
 
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="destination"
-                      className="text-xs sm:text-sm text-foreground"
-                    >
-                      Destination
-                    </Label>
-                    <Input
-                      id="destination"
-                      placeholder="City or State"
-                      value={filters.destination}
-                      onChange={(e) =>
-                        handleFilterChange("destination", e.target.value)
-                      }
-                      className="h-9 rounded-md border-border bg-input-background text-sm text-foreground placeholder:text-muted-foreground"
-                    />
-                  </div>
+                  <LocationSuggestInput
+                    id="destination"
+                    label="Destination"
+                    placeholder="City or State"
+                    value={filters.destination}
+                    options={suggestions}
+                    onChange={(value) =>
+                      handleFilterChange("destination", value)
+                    }
+                  />
 
                   <div className="space-y-1.5">
                     <Label

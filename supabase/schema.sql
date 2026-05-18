@@ -29,13 +29,17 @@ create table if not exists public.users (
   full_name text,
   phone text,
   company_name text,
-  role text not null default 'dispatcher' check (role in ('admin', 'dispatcher', 'carrier')),
+  role text not null default 'dispatcher' check (role in ('admin', 'dispatcher', 'carrier', 'support', 'user')),
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
 
 alter table public.users add column if not exists phone text;
 alter table public.users add column if not exists company_name text;
+alter table public.users drop constraint if exists users_role_check;
+alter table public.users
+  add constraint users_role_check
+  check (role in ('admin', 'dispatcher', 'carrier', 'support', 'user'));
 
 create table if not exists public.subscriptions (
   id uuid primary key default gen_random_uuid(),
@@ -53,7 +57,7 @@ create table if not exists public.loads (
   id uuid primary key default gen_random_uuid(),
   fingerprint text not null unique,
   external_id text,
-  source text not null default 'dat-extension',
+  source text not null default 'collector',
   origin jsonb not null,
   destination jsonb not null,
   distance integer,
@@ -77,6 +81,7 @@ create index if not exists idx_loads_received_at on public.loads (received_at de
 create index if not exists idx_loads_status on public.loads (status);
 create index if not exists idx_subscriptions_user_id on public.subscriptions (user_id);
 create index if not exists idx_subscriptions_status on public.subscriptions (status);
+alter table public.loads alter column source set default 'collector';
 
 drop trigger if exists users_set_updated_at on public.users;
 create trigger users_set_updated_at

@@ -4,6 +4,7 @@ import { Badge } from "./ui/badge";
 import { useAppState } from "../context/app-state";
 import React from "react";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { formatLoadLocation } from "../data/loads";
 
 export function MyLoads() {
   const { bookedLoads } = useAppState();
@@ -55,8 +56,8 @@ export function MyLoads() {
                   <div className="flex items-center gap-2 text-xs text-muted-foreground sm:text-sm">
                     <MapPin className="h-4 w-4 flex-shrink-0" />
                     <span className="truncate">
-                      {load.origin.city}, {load.origin.state} to{" "}
-                      {load.destination.city}, {load.destination.state}
+                      {formatLoadLocation(load.origin)} to{" "}
+                      {formatLoadLocation(load.destination)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground sm:text-sm">

@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 import { useAppState } from "../context/app-state";
 import { CardSkeleton } from "../../components/ui/CardSkeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { formatLoadLocation } from "../data/loads";
 
 export function Dashboard() {
   const {
@@ -56,7 +57,9 @@ export function Dashboard() {
   const recentActivity = allLoads.slice(0, 3).map((load) => ({
     id: load.id,
     action: `${load.trailerType} load collected`,
-    location: `${load.origin.city}, ${load.origin.state} to ${load.destination.city}, ${load.destination.state}`,
+    location: `${formatLoadLocation(load.origin)} to ${formatLoadLocation(
+      load.destination
+    )}`,
     time: new Date(load.receivedAt).toLocaleString("en-US"),
   }));
 
@@ -185,7 +188,7 @@ export function Dashboard() {
               </h4>
               <p className="text-xs text-muted-foreground sm:text-sm">
                 {isAdmin
-                  ? "Review stats, users, and DAT extension activity"
+                  ? "Review stats, users, and load activity"
                   : "Manage your account preferences"}
               </p>
             </Link>

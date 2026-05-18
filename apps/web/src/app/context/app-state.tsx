@@ -13,7 +13,7 @@ import { type Load } from "../data/loads";
 import { fetchLoads } from "../lib/api";
 import { supabase } from "../../lib/supabase";
 
-export type UserRole = "admin" | "dispatcher" | "carrier" | "user";
+export type UserRole = "admin" | "dispatcher" | "carrier" | "support" | "user";
 
 export interface AppNotification {
   id: string;
@@ -139,7 +139,13 @@ function removeSeededNotifications(notifications: AppNotification[]) {
 }
 
 export function normalizeRole(role?: string | null): UserRole {
-  if (role === "admin" || role === "carrier" || role === "dispatcher") {
+  if (
+    role === "admin" ||
+    role === "carrier" ||
+    role === "dispatcher" ||
+    role === "support" ||
+    role === "user"
+  ) {
     return role;
   }
 
@@ -155,6 +161,14 @@ export function formatRoleLabel(role?: string | null) {
 
   if (normalized === "carrier") {
     return "Carrier";
+  }
+
+  if (normalized === "support") {
+    return "Support";
+  }
+
+  if (normalized === "user") {
+    return "User";
   }
 
   return "Dispatcher";
@@ -400,8 +414,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
           setNotifications((existing) => [
             createNotification(
-              "New DAT loads",
-              `${difference} ta yangi load DAT extension orqali keldi.`
+              "New loads",
+              `${difference} ta yangi load yuklandi.`
             ),
             ...existing,
           ]);

@@ -84,21 +84,56 @@ function normalizeStatus(value: string | null | undefined): Load["status"] {
   }
 }
 
+function cleanText(value: string | null | undefined) {
+  const text = String(value ?? "").trim();
+
+  if (!text || /^(n\/?a|na|null|undefined)$/i.test(text)) {
+    return "";
+  }
+
+  return text;
+}
+
+function cleanAddress(value: string | null | undefined) {
+  const text = cleanText(value);
+
+  if (!text || /unknown(?: address)?(?:,\s*n\/?a)?$/i.test(text)) {
+    return "";
+  }
+
+  return text.replace(/,\s*n\/?a$/i, "").trim();
+}
+
+function displayReference(load: ApiLoad) {
+  const raw =
+    cleanText(load.external_id) || cleanText(load.fingerprint) || load.id;
+
+  return raw.replace(/^d[a]t-/i, "load-");
+}
+
+function normalizeLocation(
+  location: ApiLoad["origin"] | ApiLoad["destination"]
+) {
+  return {
+    city: cleanText(location?.city) || "Unknown",
+    state: cleanText(location?.state),
+    address: cleanAddress(location?.address),
+  };
+}
+
+export function formatLoadLocation(location: Load["origin"]) {
+  return [cleanText(location.city) || "Unknown", cleanText(location.state)]
+    .filter(Boolean)
+    .join(", ");
+}
+
 export function mapApiLoadToLoad(load: ApiLoad): Load {
   return {
     id: load.fingerprint || load.id,
-    referenceId: load.external_id || load.fingerprint || load.id,
-    source: load.source || "dat-extension",
-    origin: {
-      city: load.origin?.city || "Unknown",
-      state: load.origin?.state || "NA",
-      address: load.origin?.address || "Unknown address",
-    },
-    destination: {
-      city: load.destination?.city || "Unknown",
-      state: load.destination?.state || "NA",
-      address: load.destination?.address || "Unknown address",
-    },
+    referenceId: displayReference(load),
+    source: load.source || "collector",
+    origin: normalizeLocation(load.origin),
+    destination: normalizeLocation(load.destination),
     distance: Number(load.distance || 0),
     rate: Number(load.rate || 0),
     pickupDate: load.pickup_date || new Date().toISOString().slice(0, 10),

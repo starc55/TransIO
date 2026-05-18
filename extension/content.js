@@ -152,7 +152,7 @@ function createFingerprint(parts) {
     hash = (hash * 33) ^ input.charCodeAt(index);
   }
 
-  return `dat-${(hash >>> 0).toString(16)}`;
+  return `load-${(hash >>> 0).toString(16)}`;
 }
 
 function normalizeSeenFingerprints(rawValue) {
@@ -277,8 +277,8 @@ function mergeLoadData(listData, detailData) {
     detailData?.contacts?.find((item) => /\d{3}.*\d{3}.*\d{4}/.test(item)) ||
       listData.phoneText
   );
-  const origin = parseLocation(originText || "Unknown, NA");
-  const destination = parseLocation(destinationText || "Unknown, NA");
+  const origin = parseLocation(originText || "Unknown");
+  const destination = parseLocation(destinationText || "Unknown");
   const notes = [
     detailData?.comments,
     detailData?.companyDetail,
@@ -290,7 +290,7 @@ function mergeLoadData(listData, detailData) {
 
   const load = {
     fingerprint: "",
-    source: "dat-extension",
+    source: "collector",
     origin,
     destination,
     rate: parseMoney(listData.rateText),
@@ -333,7 +333,7 @@ async function clickRowAndReadDetails(row) {
   return extractDetailData(panel);
 }
 
-async function waitForDatRows() {
+async function waitForLoadRows() {
   const startTime = Date.now();
 
   while (Date.now() - startTime < ROW_WAIT_TIMEOUT_MS) {
@@ -347,7 +347,7 @@ async function waitForDatRows() {
       return rows;
     }
 
-    console.log("[TransIO] Waiting for DAT rows...");
+    console.log("[TransIO] Waiting for load rows...");
     await sleep(ROW_WAIT_STEP_MS);
   }
 
@@ -355,17 +355,17 @@ async function waitForDatRows() {
 }
 
 async function collectLoadsFromPage() {
-  const rows = await waitForDatRows();
+  const rows = await waitForLoadRows();
 
   if (rows.length === 0) {
-    console.log("[TransIO] No DAT rows available for scraping");
+    console.log("[TransIO] No load rows available for scraping");
     return [];
   }
 
   const pageFingerprints = new Set();
   const loads = [];
 
-  console.log(`[TransIO] Found ${rows.length} DAT rows`);
+  console.log(`[TransIO] Found ${rows.length} load rows`);
 
   for (const [index, row] of rows.entries()) {
     if (!isEnabled) {
@@ -405,7 +405,7 @@ function buildFakeLoads() {
   return [
     {
       fingerprint: "fake-test-1",
-      source: "extension-test",
+      source: "collector-test",
       origin: {
         city: "Chicago",
         state: "IL",

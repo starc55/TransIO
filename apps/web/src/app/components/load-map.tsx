@@ -1,6 +1,6 @@
 import React from "react";
 import { ExternalLink, MapPinned, Maximize2, Route, X } from "lucide-react";
-import { type Load } from "../data/loads";
+import { formatLoadLocation, type Load } from "../data/loads";
 import { Button } from "./ui/button";
 
 interface LoadMapProps {
@@ -37,24 +37,25 @@ function buildMapsRoute(load: Load) {
 export function LoadMap({ load }: LoadMapProps) {
   const [mapOpen, setMapOpen] = React.useState(false);
   const route = buildMapsRoute(load);
+  const originLabel = formatLoadLocation(load.origin);
+  const destinationLabel = formatLoadLocation(load.destination);
 
   return (
     <>
       <div
-        className="overflow-hidden rounded-lg border border-border bg-card"
+        className="overflow-hidden rounded-md border border-border bg-card"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2.5">
+        <div className="flex items-center justify-between gap-2 border-b border-border px-2.5 py-2">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <MapPinned className="h-4 w-4 text-primary" />
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
+              <MapPinned className="h-3.5 w-3.5 text-primary" />
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground">
                 Route Map
               </p>
             </div>
-            <p className="mt-1 truncate text-xs text-muted-foreground">
-              {load.origin.city}, {load.origin.state} to{" "}
-              {load.destination.city}, {load.destination.state}
+            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+              {originLabel} to {destinationLabel}
             </p>
           </div>
           <Button
@@ -62,10 +63,10 @@ export function LoadMap({ load }: LoadMapProps) {
             variant="outline"
             size="sm"
             onClick={() => setMapOpen(true)}
-            className="h-8 shrink-0 rounded-md border-border bg-background px-2 text-xs text-foreground hover:bg-accent"
+            className="h-7 shrink-0 rounded-md border-border bg-background px-2 text-[11px] text-foreground hover:bg-accent"
           >
             <Maximize2 className="mr-1.5 h-3.5 w-3.5" />
-            View route
+            View
           </Button>
         </div>
 
@@ -89,21 +90,21 @@ export function LoadMap({ load }: LoadMapProps) {
         </button>
 
         <div className="grid grid-cols-2 divide-x divide-border border-t border-border">
-          <div className="min-w-0 px-3 py-2.5">
+          <div className="min-w-0 px-2.5 py-2">
             <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               <Route className="h-3 w-3" />
               Pickup
             </div>
-            <p className="mt-1 truncate text-xs text-foreground">
+            <p className="mt-1 truncate text-[11px] text-foreground">
               {route.origin}
             </p>
           </div>
-          <div className="min-w-0 px-3 py-2.5">
+          <div className="min-w-0 px-2.5 py-2">
             <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               <Route className="h-3 w-3" />
               Delivery
             </div>
-            <p className="mt-1 truncate text-xs text-foreground">
+            <p className="mt-1 truncate text-[11px] text-foreground">
               {route.destination}
             </p>
           </div>
@@ -128,8 +129,7 @@ export function LoadMap({ load }: LoadMapProps) {
                   Full Route Map
                 </p>
                 <h3 className="truncate text-base font-semibold text-foreground">
-                  {load.origin.city}, {load.origin.state} to{" "}
-                  {load.destination.city}, {load.destination.state}
+                  {originLabel} to {destinationLabel}
                 </h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {load.distance} miles | {load.trailerType}

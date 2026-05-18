@@ -21,6 +21,11 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   import.meta.env.API_BASE_URL ||
   "https://transio-t20l.onrender.com";
+const LOAD_RETENTION_HOURS = 3;
+
+function getLoadExpiryCutoff() {
+  return new Date(Date.now() - LOAD_RETENTION_HOURS * 60 * 60 * 1000).toISOString();
+}
 
 async function apiRequest<T>(
   path: string,
@@ -52,6 +57,7 @@ export async function fetchLoads(): Promise<Load[]> {
   const { data, error } = await supabase
     .from("loads")
     .select("*")
+    .gte("received_at", getLoadExpiryCutoff())
     .order("received_at", { ascending: false });
 
   if (error) {

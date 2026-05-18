@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import {
   Gauge,
   ListFilter,
+  LifeBuoy,
   LogOut,
   Search,
   Settings,
@@ -79,6 +80,14 @@ export function CommandPalette({ open, onOpenChange }) {
         keywords: "account preferences profile",
         icon: Settings,
         action: () => navigate("/settings"),
+      },
+      {
+        label: "Go to Support",
+        hint: "Open user support and contact the support team.",
+        shortcut: "Support",
+        keywords: "help support user ticket contact",
+        icon: LifeBuoy,
+        action: () => navigate("/support"),
       },
       {
         label: "Focus Search",

@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { CardSkeleton } from "../../components/ui/CardSkeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { TableSkeleton } from "../../components/ui/TableSkeleton";
+import { formatLoadLocation } from "../data/loads";
 
 type AdminView = "overview" | "users" | "stats";
 
@@ -138,7 +139,7 @@ export function Admin({ view = "overview" }: AdminProps) {
             Admin Panel
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base">
-            Backend stats, users, and latest DAT extension loads in one place.
+            Backend stats, users, and latest loads in one place.
           </p>
         </div>
 
@@ -312,11 +313,11 @@ export function Admin({ view = "overview" }: AdminProps) {
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium text-foreground truncate">
-                        {load.origin.city}, {load.origin.state} to{" "}
-                        {load.destination.city}, {load.destination.state}
+                        {formatLoadLocation(load.origin)} to{" "}
+                        {formatLoadLocation(load.destination)}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {load.referenceId} | {load.source} | {load.trailerType}
+                        {load.referenceId} | {load.trailerType}
                       </p>
                     </div>
                     <div className="text-right">

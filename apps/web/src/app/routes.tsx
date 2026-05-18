@@ -25,6 +25,11 @@ const Settings = lazy(() =>
     default: module.Settings,
   }))
 );
+const Support = lazy(() =>
+  import("./components/support").then((module) => ({
+    default: module.Support,
+  }))
+);
 const Login = lazy(() =>
   import("./components/login").then((module) => ({ default: module.Login }))
 );
@@ -85,6 +90,7 @@ export const router = createBrowserRouter([
           },
           { path: "my-loads", Component: withSuspense(<MyLoads />) },
           { path: "saved-loads", Component: withSuspense(<SavedLoads />) },
+          { path: "support", Component: withSuspense(<Support />) },
           { path: "admin", Component: withSuspense(<Admin />) },
           {
             path: "admin/users",

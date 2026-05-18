@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { FilterPanel } from "./filter-panel";
 import { LoadCard } from "./load-card";
-import { type Load } from "../data/loads";
+import { formatLoadLocation, type Load } from "../data/loads";
 import { RefreshCw, Radio, SlidersHorizontal } from "lucide-react";
 import { Button } from "./ui/button";
 import {
@@ -28,6 +28,32 @@ interface LoadFilters {
   maxRate?: number;
   maxDistance?: number;
   maxWeight?: number;
+}
+
+function normalizeLocationQuery(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/los\s+anjeles/g, "los angeles")
+    .replace(/anjeles/g, "angeles")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function matchesLocationQuery(location: Load["origin"], query: string) {
+  const normalizedQuery = normalizeLocationQuery(query);
+
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  return [formatLoadLocation(location), location.address]
+    .map(normalizeLocationQuery)
+    .filter(Boolean)
+    .some(
+      (value) =>
+        value.includes(normalizedQuery) || normalizedQuery.includes(value)
+    );
 }
 
 export function LoadBoard() {
@@ -61,6 +87,22 @@ export function LoadBoard() {
     setActiveFilters(filters);
   };
 
+  const locationOptions = useMemo(() => {
+    const options = new Map<string, string>();
+
+    allLoads.forEach((load) => {
+      [load.origin, load.destination].forEach((location) => {
+        const label = formatLoadLocation(location);
+
+        if (label) {
+          options.set(label.toLowerCase(), label);
+        }
+      });
+    });
+
+    return Array.from(options.values()).sort((a, b) => a.localeCompare(b));
+  }, [allLoads]);
+
   const sortedLoads = useMemo(() => {
     let filtered = [...allLoads];
 
@@ -69,10 +111,8 @@ export function LoadBoard() {
       filtered = filtered.filter((load) =>
         [
           load.referenceId,
-          load.origin.city,
-          load.origin.state,
-          load.destination.city,
-          load.destination.state,
+          formatLoadLocation(load.origin),
+          formatLoadLocation(load.destination),
           load.broker,
           ...load.tags,
         ]
@@ -84,25 +124,14 @@ export function LoadBoard() {
 
     if (activeFilters.origin) {
       filtered = filtered.filter(
-        (load) =>
-          load.origin.city
-            .toLowerCase()
-            .includes(activeFilters.origin!.toLowerCase()) ||
-          load.origin.state
-            .toLowerCase()
-            .includes(activeFilters.origin!.toLowerCase())
+        (load) => matchesLocationQuery(load.origin, activeFilters.origin!)
       );
     }
 
     if (activeFilters.destination) {
       filtered = filtered.filter(
         (load) =>
-          load.destination.city
-            .toLowerCase()
-            .includes(activeFilters.destination!.toLowerCase()) ||
-          load.destination.state
-            .toLowerCase()
-            .includes(activeFilters.destination!.toLowerCase())
+          matchesLocationQuery(load.destination, activeFilters.destination!)
       );
     }
 
@@ -149,7 +178,7 @@ export function LoadBoard() {
   const emptyDescription =
     searchQuery.trim() || hasActiveFilters
       ? "No freight loads match the current search or filters. Adjust the lane, broker, equipment, or rate filters and try again."
-      : "Collector loads will appear here once freight data is available from Supabase or the DAT extension workflow.";
+      : "Loads will appear here once freight data is available.";
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -214,10 +243,10 @@ export function LoadBoard() {
         </div>
       </div>
 
-      <FilterPanel onFilter={handleFilter} />
+      <FilterPanel onFilter={handleFilter} locationOptions={locationOptions} />
 
-      <div className="flex-1 overflow-auto bg-background p-2.5 sm:p-3 md:p-4">
-        <motion.div layout className="mx-auto max-w-7xl space-y-2">
+      <div className="flex-1 overflow-auto bg-background p-2 sm:p-2.5 md:p-3">
+        <motion.div layout className="mx-auto max-w-7xl space-y-1.5">
           {loadsError && (
             <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-center">
               <p className="text-sm text-destructive">{loadsError}</p>
@@ -240,7 +269,7 @@ export function LoadBoard() {
             />
           ) : (
             <>
-              <div className="hidden rounded-md border border-border bg-muted px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground lg:grid lg:grid-cols-[150px_minmax(220px,1fr)_142px_110px_132px]">
+              <div className="hidden rounded-md border border-border bg-muted px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground lg:grid lg:grid-cols-[126px_minmax(190px,1fr)_108px_88px_104px]">
                 <span>Reference</span>
                 <span>Lane / Broker</span>
                 <span>Pickup</span>

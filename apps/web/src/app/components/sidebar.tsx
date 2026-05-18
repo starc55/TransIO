@@ -10,6 +10,7 @@ import {
   ChevronRight,
   BellRing,
   Radio,
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "./ui/utils";
 import { Button } from "./ui/button";
@@ -28,6 +29,7 @@ const baseMenuItems = [
   { icon: PackageSearch, label: "Load Board", path: "/loads" },
   { icon: Package, label: "My Loads", path: "/my-loads" },
   { icon: Bookmark, label: "Saved Loads", path: "/saved-loads" },
+  { icon: LifeBuoy, label: "Support", path: "/support" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
@@ -35,9 +37,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { isAdmin, profile, unreadNotifications, allLoads } = useAppState();
   const menuItems = isAdmin
     ? [
-        ...baseMenuItems.slice(0, 4),
+        ...baseMenuItems.slice(0, 5),
         { icon: Shield, label: "Admin", path: "/admin" },
-        baseMenuItems[4],
+        baseMenuItems[5],
       ]
     : baseMenuItems;
 

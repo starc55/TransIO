@@ -7,6 +7,8 @@ const cors = require("cors");
 
 const adminRoute = require("./routes/admin");
 const ingestRoute = require("./routes/ingest");
+const { supabase } = require("./services/supabase");
+const { deleteExpiredLoads } = require("./services/load-retention");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -44,3 +46,14 @@ app.use("/ingest", ingestRoute);
 app.listen(PORT, () => {
   console.log(`API running on port ${PORT}`);
 });
+
+async function cleanupExpiredLoads() {
+  try {
+    await deleteExpiredLoads(supabase);
+  } catch (error) {
+    console.error("Expired load cleanup failed", error);
+  }
+}
+
+void cleanupExpiredLoads();
+setInterval(cleanupExpiredLoads, 10 * 60 * 1000);

@@ -1,5 +1,6 @@
 const express = require("express");
 const { supabase } = require("../services/supabase");
+const { deleteExpiredLoads } = require("../services/load-retention");
 
 const router = express.Router();
 
@@ -7,7 +8,7 @@ function normalizeLoad(load) {
   return {
     fingerprint: String(load.fingerprint),
     external_id: load.external_id ?? load.externalId ?? null,
-    source: load.source ?? "dat-extension",
+    source: load.source ?? "collector",
     origin: load.origin ?? {},
     destination: load.destination ?? {},
     distance: load.distance ?? null,
@@ -58,6 +59,8 @@ router.post("/", async (req, res) => {
     }
 
     const normalizedLoads = loads.map(normalizeLoad);
+
+    await deleteExpiredLoads(supabase);
 
     const { data, error } = await supabase
       .from("loads")

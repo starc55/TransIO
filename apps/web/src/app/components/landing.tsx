@@ -65,7 +65,7 @@ const faqs = [
   {
     question: "Does TransIO replace a load board?",
     answer:
-      "TransIO is designed to complement or operate as a DAT alternative layer for teams that want cleaner load intelligence, filtering, saved loads, and operational visibility.",
+      "TransIO is designed for teams that want cleaner load intelligence, filtering, saved loads, and operational visibility.",
   },
   {
     question: "Can dispatchers manage freight opportunities?",
