@@ -123,7 +123,7 @@ function extractPhone(value) {
     /(\+?1[\s.-]?)?(\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/
   );
 
-  return match ? normalizeText(match[0]) : cleanValue(value);
+  return match ? normalizeText(match[0]) : "";
 }
 
 function extractEmail(value) {
@@ -214,6 +214,83 @@ function parseLocation(text) {
     state: normalizeText(statePart.split(" ")[0]),
     address: raw,
   };
+}
+
+function extractReferenceId(value, allowLoose = false) {
+  const clean = cleanValue(value);
+
+  if (!clean) {
+    return "";
+  }
+
+  const invalidWords = new Set([
+    "FULL",
+    "TRUCK",
+    "LOAD",
+    "STEP",
+    "DECK",
+    "EMPTY",
+    "DEPOT",
+    "PORTS",
+    "REFERENCE",
+    "COMMODITY",
+  ]);
+  const normalizeCandidate = (candidate) => {
+    const id = cleanValue(candidate).toUpperCase();
+
+    if (
+      id.length < 4 ||
+      !/\d/.test(id) ||
+      invalidWords.has(id) ||
+      /\s/.test(id)
+    ) {
+      return "";
+    }
+
+    return id;
+  };
+  const labeledMatch = clean.match(
+    /\bReference\s*ID\b\s*[:#-]?\s*([A-Z0-9][A-Z0-9-]{3,})\b/i
+  );
+
+  if (labeledMatch) {
+    const directCandidate = normalizeCandidate(labeledMatch[1]);
+
+    if (directCandidate) {
+      return directCandidate;
+    }
+
+    const labelIndex = clean.search(/\bReference\s*ID\b/i);
+    const labelTail = labelIndex === -1 ? "" : clean.slice(labelIndex, labelIndex + 120);
+
+    for (const match of labelTail.matchAll(/\b[A-Z0-9][A-Z0-9-]{3,}\b/gi)) {
+      const candidate = normalizeCandidate(match[0]);
+
+      if (candidate) {
+        return candidate;
+      }
+    }
+  }
+
+  if (!allowLoose) {
+    return "";
+  }
+
+  for (const match of clean.matchAll(/\b[A-Z0-9][A-Z0-9-]{3,}\b/gi)) {
+    const candidate = normalizeCandidate(match[0]);
+
+    if (candidate) {
+      return candidate;
+    }
+  }
+
+  return "";
+}
+
+function extractMcNumber(value) {
+  const match = normalizeText(value).match(/\bMC\s*#?\s*(\d{3,})\b/i);
+
+  return match ? `MC#${match[1]}` : "";
 }
 
 function parsePickup(text) {
@@ -431,6 +508,39 @@ function getListLocationText(row, selector) {
   return destinationText ? cleanValue(raw.replace(destinationText, "")) : raw;
 }
 
+function getRouteLocationText(routeRoot, type) {
+  if (!routeRoot) {
+    return "";
+  }
+
+  if (type === "origin") {
+    const detailsText = getFirstText(routeRoot, [".route-origin .city"]);
+
+    if (detailsText) {
+      return detailsText;
+    }
+
+    const listRoot = routeRoot.querySelector('[data-test="load-origin-cell"]');
+    const destinationRoot = routeRoot.querySelector(
+      '[data-test="load-destination-cell"]'
+    );
+    const cityStateRows = Array.from(
+      listRoot?.querySelectorAll(".city-state-container") ?? []
+    );
+    const originRow =
+      cityStateRows.find((element) => element !== destinationRoot) ||
+      cityStateRows[0];
+
+    return cleanValue(originRow?.textContent);
+  }
+
+  return getFirstText(routeRoot, [
+    ".route-destination .city",
+    '[data-test="load-destination-cell"]',
+    ".route-dh-container-lg .destination",
+  ]);
+}
+
 function extractListData(row) {
   return {
     ageText: getText(row, LIST_SELECTORS.age),
@@ -452,16 +562,8 @@ function extractListData(row) {
 
 function extractRouteDetails(panel) {
   const routeRoot = panel?.querySelector("dat-route") ?? panel;
-  const originText = getFirstText(routeRoot, [
-    ".route-origin .city",
-    '[data-test="load-origin-cell"]',
-    ".route-dh-container-lg .origin",
-  ]);
-  const destinationText = getFirstText(routeRoot, [
-    ".route-destination .city",
-    '[data-test="load-destination-cell"]',
-    ".route-dh-container-lg .destination",
-  ]);
+  const originText = getRouteLocationText(routeRoot, "origin");
+  const destinationText = getRouteLocationText(routeRoot, "destination");
   const originDateText = getFirstText(routeRoot, [
     ".route-origin .date",
     '[data-test="load-pick-up-cell"]',
@@ -486,6 +588,11 @@ function extractEquipmentDetails(panel) {
     ".equipment-label .data-label",
     ".equipment-data .data-item"
   );
+  const equipmentText = normalizeText(equipmentRoot?.textContent);
+  const referencePairValue = findPairValue(pairs, [
+    "Reference ID",
+    "Reference",
+  ]);
 
   return {
     loadType: findPairValue(pairs, ["Load"]),
@@ -493,7 +600,9 @@ function extractEquipmentDetails(panel) {
     length: findPairValue(pairs, ["Length"]),
     weight: findPairValue(pairs, ["Weight"]),
     commodity: findPairValue(pairs, ["Commodity"]),
-    referenceId: findPairValue(pairs, ["Reference ID", "Reference"]),
+    referenceId:
+      extractReferenceId(referencePairValue, true) ||
+      extractReferenceId(equipmentText),
   };
 }
 
@@ -546,17 +655,21 @@ function extractCompanyDetails(panel) {
   const companyRoot = panel?.querySelector(DETAIL_SELECTORS.company);
   const companyText = normalizeText(companyRoot?.textContent);
   const phoneText = getFirstText(companyRoot, ['a[href^="tel:"]']);
-  const mcMatch = companyText.match(/\bMC#?\s*\d+/i);
   const reviews = getFirstText(companyRoot, [".reviews"]);
 
   if (!companyRoot) {
-    return {};
+    const panelText = normalizeText(panel?.textContent);
+
+    return {
+      mcNumber: extractMcNumber(panelText),
+    };
   }
 
   return {
     name: getFirstText(companyRoot, [".company-details", '[data-test="load-company-cell"]']),
     phone: extractPhone(phoneText),
-    mcNumber: mcMatch ? normalizeText(mcMatch[0].toUpperCase().replace(/\s+/g, "")) : "",
+    mcNumber:
+      extractMcNumber(companyText) || extractMcNumber(panel?.textContent),
     location: getFirstText(companyRoot, [".light-text"]),
     factoringEligible: /factoring eligible/i.test(companyText),
     rating: companyRoot.querySelectorAll('[data-mat-icon-name="star-dark"]').length || null,
@@ -585,6 +698,7 @@ function extractDetailData(panel) {
     company,
     contacts,
     comments,
+    rawText: normalizeText(panel?.textContent),
     phoneText:
       contacts.find((item) => /\d{3}.*\d{3}.*\d{4}/.test(item)) ||
       company.phone ||
@@ -634,7 +748,7 @@ function mergeLoadData(listData, detailData) {
   const ratePerMileText = cleanValue(
     rateDetails.ratePerMileText || listData.ratePerMileText
   );
-  const phone = extractPhone(detailData?.phoneText || listData.phoneText);
+  const phone = extractPhone(detailData?.phoneText) || extractPhone(listData.phoneText);
   const origin = parseLocation(originText || "Unknown");
   const destination = parseLocation(destinationText || "Unknown");
 
@@ -647,7 +761,10 @@ function mergeLoadData(listData, detailData) {
     .map(normalizeText)
     .filter(Boolean)
     .join(" | ");
-  const externalId = cleanValue(equipmentDetails.referenceId);
+  const externalId =
+    extractReferenceId(equipmentDetails.referenceId) ||
+    extractReferenceId(detailData?.rawText) ||
+    "";
   const lengthText = cleanValue(equipmentDetails.length || listData.lengthText);
   const capacityText = cleanValue(equipmentDetails.loadType || listData.capacityText);
   const commodityText = cleanValue(equipmentDetails.commodity);
