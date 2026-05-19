@@ -75,6 +75,25 @@ const DEFAULT_FILTERS: LoadBoardFilters = {
   pickupDate: "",
 };
 
+interface LoadFilterTab {
+  id: string;
+  label: string;
+  filters: LoadBoardFilters;
+}
+
+function createFilterTab(
+  index: number,
+  filters: LoadBoardFilters = DEFAULT_FILTERS
+): LoadFilterTab {
+  return {
+    id: `filter-${Date.now()}-${index}-${Math.random()
+      .toString(16)
+      .slice(2)}`,
+    label: `Filter ${index}`,
+    filters,
+  };
+}
+
 function splitParam(value: string | null) {
   return (value || "")
     .split(",")
@@ -329,6 +348,10 @@ export function LoadBoard() {
   const [filters, setFilters] = useState<LoadBoardFilters>(() =>
     parseLoadFilters(searchParams, searchQuery)
   );
+  const [filterTabs, setFilterTabs] = useState<LoadFilterTab[]>(() => [
+    { id: "filter-1", label: "Filter 1", filters },
+  ]);
+  const [activeFilterTabId, setActiveFilterTabId] = useState("filter-1");
   const filterSearchRef = useRef(filters.search);
   const [loads, setLoads] = useState<Load[]>([]);
   const [totalLoads, setTotalLoads] = useState(0);
@@ -365,10 +388,16 @@ export function LoadBoard() {
       return;
     }
 
-    filterSearchRef.current = searchQuery;
-    setFilters((current) => ({ ...current, search: searchQuery }));
+    const nextFilters = sanitizeFilters({ ...filters, search: searchQuery });
+    filterSearchRef.current = nextFilters.search;
+    setFilters(nextFilters);
+    setFilterTabs((current) =>
+      current.map((tab) =>
+        tab.id === activeFilterTabId ? { ...tab, filters: nextFilters } : tab
+      )
+    );
     setNextPage(1);
-  }, [searchQuery]);
+  }, [activeFilterTabId, filters, searchQuery]);
 
   useEffect(() => {
     const nextParams = buildSearchParams(filters);
@@ -527,23 +556,33 @@ export function LoadBoard() {
     return () => observer.disconnect();
   }, [loadMore]);
 
+  const commitActiveFilters = useCallback(
+    (nextFilters: LoadBoardFilters) => {
+      const sanitized = sanitizeFilters(nextFilters);
+
+      filterSearchRef.current = sanitized.search;
+      setNextPage(1);
+      setFilters(sanitized);
+      setFilterTabs((current) =>
+        current.map((tab) =>
+          tab.id === activeFilterTabId ? { ...tab, filters: sanitized } : tab
+        )
+      );
+      setSearchQuery(sanitized.search);
+    },
+    [activeFilterTabId, setSearchQuery]
+  );
+
   const updateFilters = useCallback(
     (patch: Partial<LoadBoardFilters>) => {
-      setNextPage(1);
-      setFilters((current) => sanitizeFilters({ ...current, ...patch }));
-
-      if (Object.prototype.hasOwnProperty.call(patch, "search")) {
-        setSearchQuery(String(patch.search || ""));
-      }
+      commitActiveFilters({ ...filters, ...patch });
     },
-    [setSearchQuery]
+    [commitActiveFilters, filters]
   );
 
   const clearFilters = useCallback(() => {
-    setNextPage(1);
-    setFilters(DEFAULT_FILTERS);
-    setSearchQuery("");
-  }, [setSearchQuery]);
+    commitActiveFilters(DEFAULT_FILTERS);
+  }, [commitActiveFilters]);
 
   const removeFilter = useCallback(
     (key: string, value?: string) => {
@@ -552,46 +591,108 @@ export function LoadBoard() {
         return;
       }
 
+      switch (key) {
+        case "origin":
+          updateFilters({ origin: "", originState: [] });
+          break;
+        case "destination":
+          updateFilters({ destination: "", destinationState: [] });
+          break;
+        case "equipment":
+          updateFilters({
+            equipment: filters.equipment.filter((item) => item !== value),
+          });
+          break;
+        case "originState":
+          updateFilters({
+            originState: filters.originState.filter((item) => item !== value),
+          });
+          break;
+        case "destinationState":
+          updateFilters({
+            destinationState: filters.destinationState.filter(
+              (item) => item !== value
+            ),
+          });
+          break;
+        case "rate":
+          updateFilters({ minRate: "", maxRate: "" });
+          break;
+        case "distance":
+          updateFilters({ minDistance: "", maxDistance: "" });
+          break;
+        case "status":
+          updateFilters({ status: "all" });
+          break;
+        case "broker":
+          updateFilters({ broker: "" });
+          break;
+        case "pickup":
+          updateFilters({ pickupPreset: "", pickupDate: "" });
+          break;
+        default:
+          break;
+      }
+    },
+    [filters, updateFilters]
+  );
+
+  const selectFilterTab = useCallback(
+    (tabId: string) => {
+      const tab = filterTabs.find((item) => item.id === tabId);
+
+      if (!tab) {
+        return;
+      }
+
+      filterSearchRef.current = tab.filters.search;
+      setActiveFilterTabId(tab.id);
+      setFilters(tab.filters);
+      setSearchQuery(tab.filters.search);
       setNextPage(1);
-      setFilters((current) => {
-        switch (key) {
-          case "origin":
-            return { ...current, origin: "", originState: [] };
-          case "destination":
-            return { ...current, destination: "", destinationState: [] };
-          case "equipment":
-            return {
-              ...current,
-              equipment: current.equipment.filter((item) => item !== value),
-            };
-          case "originState":
-            return {
-              ...current,
-              originState: current.originState.filter((item) => item !== value),
-            };
-          case "destinationState":
-            return {
-              ...current,
-              destinationState: current.destinationState.filter(
-                (item) => item !== value
-              ),
-            };
-          case "rate":
-            return { ...current, minRate: "", maxRate: "" };
-          case "distance":
-            return { ...current, minDistance: "", maxDistance: "" };
-          case "status":
-            return { ...current, status: "all" };
-          case "broker":
-            return { ...current, broker: "" };
-          case "pickup":
-            return { ...current, pickupPreset: "", pickupDate: "" };
-          default:
-            return current;
+    },
+    [filterTabs, setSearchQuery]
+  );
+
+  const addFilterTab = useCallback(() => {
+    const nextIndex = filterTabs.length + 1;
+    const nextTab = createFilterTab(nextIndex, DEFAULT_FILTERS);
+
+    filterSearchRef.current = "";
+    setFilterTabs((current) => [...current, nextTab]);
+    setActiveFilterTabId(nextTab.id);
+    setFilters(DEFAULT_FILTERS);
+    setSearchQuery("");
+    setNextPage(1);
+  }, [filterTabs.length, setSearchQuery]);
+
+  const closeFilterTab = useCallback(
+    (tabId: string) => {
+      setFilterTabs((current) => {
+        if (current.length <= 1) {
+          return current;
         }
+
+        const index = current.findIndex((tab) => tab.id === tabId);
+        const nextTabs = current.filter((tab) => tab.id !== tabId);
+
+        if (tabId === activeFilterTabId) {
+          const nextActive =
+            nextTabs[Math.max(0, Math.min(index, nextTabs.length - 1))];
+
+          if (nextActive) {
+            filterSearchRef.current = nextActive.filters.search;
+            setActiveFilterTabId(nextActive.id);
+            setFilters(nextActive.filters);
+            setSearchQuery(nextActive.filters.search);
+            setNextPage(1);
+          }
+        }
+
+        return nextTabs;
       });
     },
-    [updateFilters]
+    [activeFilterTabId, setSearchQuery]
   );
 
   const handleRefresh = useCallback(async () => {
@@ -683,6 +784,11 @@ export function LoadBoard() {
 
       <FilterBar
         filters={filters}
+        filterTabs={filterTabs}
+        activeFilterTabId={activeFilterTabId}
+        onSelectFilterTab={selectFilterTab}
+        onAddFilterTab={addFilterTab}
+        onCloseFilterTab={closeFilterTab}
         onChange={updateFilters}
         onRemove={removeFilter}
         onClear={clearFilters}
