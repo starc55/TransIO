@@ -131,7 +131,7 @@ export function LocationSuggestFilter({
   const summary =
     query || states.length
       ? [query, states.length ? states.join(",") : ""].filter(Boolean).join(" / ")
-      : "Any";
+      : "";
 
   const commitQuery = (value) => {
     setDraft(value);
@@ -165,7 +165,13 @@ export function LocationSuggestFilter({
           )}
         >
           <span className="min-w-0 truncate text-left">
-            <span className="mr-1 text-muted-foreground">{label}</span>
+            <span
+              className={
+                query || states.length ? "mr-1 text-muted-foreground" : ""
+              }
+            >
+              {label}
+            </span>
             {summary}
           </span>
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />

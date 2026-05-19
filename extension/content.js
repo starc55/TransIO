@@ -13,25 +13,31 @@ const STORAGE_KEYS = {
 
 const LIST_SELECTORS = {
   row: ".row-cells",
+  age: '[data-test="load-age-cell"]',
   origin: '[data-test="load-origin-cell"]',
   destination: '[data-test="load-destination-cell"]',
   rate: '[data-test="load-rate-cell"] .offer',
+  ratePerMile: '[data-test="load-rate-cell"] .calculated-rate',
   distance: '[data-test="load-trip-cell"]',
   pickupDate: '[data-test="load-pick-up-cell"]',
   equipment: '[data-test="load-eq-cell"]',
   weight: '[data-test="load-weight-cell"]',
+  length: '[data-test="load-length-cell"]',
+  capacity: '[data-test="load-capacity-cell"]',
   company: '[data-test="load-company-cell"]',
   phone: '[data-test="load-contact-cell"]',
+  credit: '[data-test="load-cs-dtp-cell"]',
 };
 
 const DETAIL_SELECTORS = {
-  panel: ".expanded-detail-row",
-  route: ".trip-place",
+  panel: ".expanded-detail-row, .details",
   distance: ".trip-miles",
-  contact: '[data-test="contact-information-container"] a',
-  comments: '[data-test="comments-container"]',
+  contact: '[data-test="contact-information-container"] a, dat-contacts a',
+  comments: '[data-test="comments-container"] .notes-contents',
   company: '[data-test="company-details-container"]',
-  equipmentDetail: '[data-test="details-container"]',
+  equipmentDetail: 'dat-equipment [data-test="details-container"]',
+  rateDetail: '[data-test="rate-details-container"]',
+  marketRates: '[data-test="market-rates-detail-container"]',
 };
 
 let isScraping = false;
@@ -50,13 +56,35 @@ function normalizeText(value) {
     .trim();
 }
 
+function cleanValue(value) {
+  const text = normalizeText(value);
+
+  if (!text || text === "-" || text === "\u2013" || /^n\/?a$/i.test(text)) {
+    return "";
+  }
+
+  return text;
+}
+
 function getText(root, selector) {
   return normalizeText(root?.querySelector(selector)?.textContent);
 }
 
+function getFirstText(root, selectors) {
+  for (const selector of selectors) {
+    const value = cleanValue(root?.querySelector(selector)?.textContent);
+
+    if (value) {
+      return value;
+    }
+  }
+
+  return "";
+}
+
 function getTexts(root, selector) {
   return Array.from(root?.querySelectorAll(selector) ?? [])
-    .map((element) => normalizeText(element?.textContent))
+    .map((element) => cleanValue(element?.textContent))
     .filter(Boolean);
 }
 
@@ -72,12 +100,100 @@ function parseInteger(value) {
   return match ? Number(match[0]) : null;
 }
 
+function toLocalDateString(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatMoney(value) {
+  const amount = parseMoney(value);
+
+  if (amount === null) {
+    return cleanValue(value);
+  }
+
+  return `$${amount.toLocaleString("en-US")}`;
+}
+
 function extractPhone(value) {
   const match = normalizeText(value).match(
     /(\+?1[\s.-]?)?(\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/
   );
 
-  return match ? normalizeText(match[0]) : normalizeText(value);
+  return match ? normalizeText(match[0]) : cleanValue(value);
+}
+
+function extractEmail(value) {
+  const match = normalizeText(value).match(
+    /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i
+  );
+
+  return match ? match[0] : "";
+}
+
+function extractWebsite(value) {
+  const text = normalizeText(value).replace(/[()]/g, " ");
+  const pattern =
+    /\b(?:https?:\/\/)?(?:www\.)?[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s|]*)?/gi;
+
+  for (const match of text.matchAll(pattern)) {
+    const value = match[0];
+    const previousChar = match.index ? text[match.index - 1] : "";
+
+    if (previousChar !== "@" && !/^\d+\.\d+$/.test(value)) {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+function normalizeEquipment(value) {
+  const text = cleanValue(value);
+  const normalized = text.toLowerCase();
+
+  if (!text) {
+    return "";
+  }
+
+  if (normalized === "r" || normalized.includes("reefer")) {
+    return "Reefer";
+  }
+
+  if (
+    normalized === "v" ||
+    normalized === "dv" ||
+    normalized.includes("dry van") ||
+    normalized === "van"
+  ) {
+    return "Dry Van";
+  }
+
+  if (
+    normalized === "f" ||
+    normalized === "fb" ||
+    normalized.includes("flatbed") ||
+    normalized.includes("flat bed")
+  ) {
+    return "Flatbed";
+  }
+
+  if (
+    normalized === "po" ||
+    normalized.includes("power only") ||
+    normalized.includes("power-only")
+  ) {
+    return "Power Only";
+  }
+
+  if (normalized.includes("box truck") || normalized.includes("boxtruck")) {
+    return "Box Truck";
+  }
+
+  return text;
 }
 
 function parseLocation(text) {
@@ -120,9 +236,35 @@ function parsePickup(text) {
     baseDate = new Date(now);
     baseDate.setDate(baseDate.getDate() + 1);
   } else {
+    const namedDateMatch = raw.match(
+      /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})(?:,\s*(\d{4}))?\b/i
+    );
     const dateMatch = raw.match(/\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b/);
 
-    if (dateMatch) {
+    if (namedDateMatch) {
+      const monthNames = {
+        jan: 0,
+        feb: 1,
+        mar: 2,
+        apr: 3,
+        may: 4,
+        jun: 5,
+        jul: 6,
+        aug: 7,
+        sep: 8,
+        oct: 9,
+        nov: 10,
+        dec: 11,
+      };
+      const monthKey = namedDateMatch[1].slice(0, 3).toLowerCase();
+      const month = monthNames[monthKey];
+      const day = Number(namedDateMatch[2]);
+      const year = namedDateMatch[3]
+        ? Number(namedDateMatch[3])
+        : now.getFullYear();
+
+      baseDate = new Date(year, month, day);
+    } else if (dateMatch) {
       const month = Number(dateMatch[1]) - 1;
       const day = Number(dateMatch[2]);
       const year = dateMatch[3]
@@ -133,12 +275,14 @@ function parsePickup(text) {
     }
   }
 
-  const timeMatch = raw.match(/\b\d{1,2}:\d{2}\s?(AM|PM)\b/i);
+  const timeMatch = raw.match(
+    /\b\d{1,2}:?\d{2}\s?(?:AM|PM)?(?:\s?-\s?\d{1,2}:?\d{2}\s?(?:AM|PM)?)?\b/i
+  );
 
   return {
     pickup_date:
       baseDate && !Number.isNaN(baseDate.getTime())
-        ? baseDate.toISOString().slice(0, 10)
+        ? toLocalDateString(baseDate)
         : null,
     pickup_time: timeMatch ? normalizeText(timeMatch[0].toUpperCase()) : null,
   };
@@ -172,6 +316,44 @@ function normalizeSeenFingerprints(rawValue) {
 
 function trimFingerprints(fingerprints) {
   return fingerprints.slice(-MAX_SEEN_FINGERPRINTS);
+}
+
+function normalizeLabel(label) {
+  return normalizeText(label)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function findPairValue(pairs, labels) {
+  const wanted = labels.map(normalizeLabel);
+  const entry = pairs.find((item) =>
+    wanted.includes(normalizeLabel(item.label))
+  );
+  return entry ? cleanValue(entry.value) : "";
+}
+
+function extractPairs(root, labelSelector, valueSelector) {
+  const labels = Array.from(root?.querySelectorAll(labelSelector) ?? []);
+  const values = Array.from(root?.querySelectorAll(valueSelector) ?? []);
+
+  return labels
+    .map((label, index) => ({
+      label: normalizeText(label.textContent),
+      value: cleanValue(values[index]?.textContent),
+    }))
+    .filter((item) => item.label || item.value);
+}
+
+function parseCredit(text) {
+  const clean = normalizeText(text);
+  const scoreMatch = clean.match(/\b\d+\s*CS\b/i);
+  const daysMatch = clean.match(/\b\d+\s*DTP\b/i);
+
+  return {
+    creditScore: scoreMatch ? normalizeText(scoreMatch[0].toUpperCase()) : "",
+    daysToPay: daysMatch ? normalizeText(daysMatch[0].toUpperCase()) : "",
+  };
 }
 
 function getStorage(defaults) {
@@ -222,28 +404,193 @@ function findDetailPanelNearRow(row) {
   return null;
 }
 
+function getListLocationText(row, selector) {
+  const locationRoot = row?.querySelector(selector);
+
+  if (!locationRoot) {
+    return "";
+  }
+
+  if (selector === LIST_SELECTORS.destination) {
+    return cleanValue(locationRoot.textContent);
+  }
+
+  const destinationRoot = row?.querySelector(LIST_SELECTORS.destination);
+  const locationParts = Array.from(
+    locationRoot.querySelectorAll(".city-state-container")
+  );
+  const originPart = locationParts.find((element) => element !== destinationRoot);
+
+  if (originPart) {
+    return cleanValue(originPart.textContent);
+  }
+
+  const raw = cleanValue(locationRoot.textContent);
+  const destinationText = cleanValue(destinationRoot?.textContent);
+
+  return destinationText ? cleanValue(raw.replace(destinationText, "")) : raw;
+}
+
 function extractListData(row) {
   return {
-    originText: getText(row, LIST_SELECTORS.origin),
-    destinationText: getText(row, LIST_SELECTORS.destination),
+    ageText: getText(row, LIST_SELECTORS.age),
+    originText: getListLocationText(row, LIST_SELECTORS.origin),
+    destinationText: getListLocationText(row, LIST_SELECTORS.destination),
     rateText: getText(row, LIST_SELECTORS.rate),
+    ratePerMileText: getText(row, LIST_SELECTORS.ratePerMile),
     distanceText: getText(row, LIST_SELECTORS.distance),
     pickupText: getText(row, LIST_SELECTORS.pickupDate),
     equipmentText: getText(row, LIST_SELECTORS.equipment),
     weightText: getText(row, LIST_SELECTORS.weight),
+    lengthText: getText(row, LIST_SELECTORS.length),
+    capacityText: getText(row, LIST_SELECTORS.capacity),
     companyText: getText(row, LIST_SELECTORS.company),
     phoneText: getText(row, LIST_SELECTORS.phone),
+    creditText: getText(row, LIST_SELECTORS.credit),
+  };
+}
+
+function extractRouteDetails(panel) {
+  const routeRoot = panel?.querySelector("dat-route") ?? panel;
+  const originText = getFirstText(routeRoot, [
+    ".route-origin .city",
+    '[data-test="load-origin-cell"]',
+    ".route-dh-container-lg .origin",
+  ]);
+  const destinationText = getFirstText(routeRoot, [
+    ".route-destination .city",
+    '[data-test="load-destination-cell"]',
+    ".route-dh-container-lg .destination",
+  ]);
+  const originDateText = getFirstText(routeRoot, [
+    ".route-origin .date",
+    '[data-test="load-pick-up-cell"]',
+  ]);
+  const destinationDateText = getFirstText(routeRoot, [".route-destination .date"]);
+
+  return {
+    originText,
+    destinationText,
+    originDateText,
+    originTimeText: getFirstText(routeRoot, [".route-origin .hours"]),
+    destinationDateText,
+    destinationTimeText: getFirstText(routeRoot, [".route-destination .hours"]),
+    distanceText: getFirstText(routeRoot, [".trip-miles", '[data-test="load-trip-cell"]']),
+  };
+}
+
+function extractEquipmentDetails(panel) {
+  const equipmentRoot = panel?.querySelector(DETAIL_SELECTORS.equipmentDetail);
+  const pairs = extractPairs(
+    equipmentRoot,
+    ".equipment-label .data-label",
+    ".equipment-data .data-item"
+  );
+
+  return {
+    loadType: findPairValue(pairs, ["Load"]),
+    truck: findPairValue(pairs, ["Truck"]),
+    length: findPairValue(pairs, ["Length"]),
+    weight: findPairValue(pairs, ["Weight"]),
+    commodity: findPairValue(pairs, ["Commodity"]),
+    referenceId: findPairValue(pairs, ["Reference ID", "Reference"]),
+  };
+}
+
+function extractRateDetails(panel) {
+  const rateRoot = panel?.querySelector(DETAIL_SELECTORS.rateDetail);
+  const pairs = extractPairs(
+    rateRoot,
+    ".rate-detail-label .data-label",
+    ".rate-data .data-item, .rate-data .data-item-total, .rate-data .data-item-ratemiles"
+  );
+
+  return {
+    totalText:
+      getFirstText(rateRoot, [".data-item-total"]) ||
+      findPairValue(pairs, ["Total"]),
+    tripText: findPairValue(pairs, ["Trip"]),
+    ratePerMileText:
+      getFirstText(rateRoot, [".data-item-ratemiles"]) ||
+      findPairValue(pairs, ["Rate / mile", "Rate per mile"]),
+  };
+}
+
+function extractMarketRates(panel) {
+  const marketRoot = panel?.querySelector(DETAIL_SELECTORS.marketRates);
+  const spotRoot = marketRoot?.querySelector(".spot") ?? marketRoot;
+  const rangeText = getFirstText(spotRoot, [".range-data"]);
+  const rangeMatches = rangeText.match(/\$[\d,]+(?:\.\d+)?/g) || [];
+  const perMileMatches = rangeText.match(/\$\d+(?:\.\d+)?\/mi/g) || [];
+
+  if (!marketRoot) {
+    return {};
+  }
+
+  return {
+    spotRateText: getFirstText(spotRoot, [".rate-data"]),
+    spotRatePerMileText: getFirstText(spotRoot, [".rate-permile"]),
+    spotAverageText: getFirstText(spotRoot, [".miles-day-average"]),
+    rangeText,
+    rangeLowText: rangeMatches[0] || "",
+    rangeHighText: rangeMatches[1] || "",
+    rangePerMileLowText: perMileMatches[0] || "",
+    rangePerMileHighText: perMileMatches[1] || "",
+    contractUnavailable: /contract rates are not available/i.test(
+      normalizeText(marketRoot.textContent)
+    ),
+  };
+}
+
+function extractCompanyDetails(panel) {
+  const companyRoot = panel?.querySelector(DETAIL_SELECTORS.company);
+  const companyText = normalizeText(companyRoot?.textContent);
+  const phoneText = getFirstText(companyRoot, ['a[href^="tel:"]']);
+  const mcMatch = companyText.match(/\bMC#?\s*\d+/i);
+  const reviews = getFirstText(companyRoot, [".reviews"]);
+
+  if (!companyRoot) {
+    return {};
+  }
+
+  return {
+    name: getFirstText(companyRoot, [".company-details", '[data-test="load-company-cell"]']),
+    phone: extractPhone(phoneText),
+    mcNumber: mcMatch ? normalizeText(mcMatch[0].toUpperCase().replace(/\s+/g, "")) : "",
+    location: getFirstText(companyRoot, [".light-text"]),
+    factoringEligible: /factoring eligible/i.test(companyText),
+    rating: companyRoot.querySelectorAll('[data-mat-icon-name="star-dark"]').length || null,
+    reviews: reviews ? reviews.replace(/[()]/g, "") : "",
   };
 }
 
 function extractDetailData(panel) {
+  const route = extractRouteDetails(panel);
+  const equipment = extractEquipmentDetails(panel);
+  const rate = extractRateDetails(panel);
+  const marketRates = extractMarketRates(panel);
+  const company = extractCompanyDetails(panel);
+  const comments = getText(panel, DETAIL_SELECTORS.comments);
+  const contacts = getTexts(panel, DETAIL_SELECTORS.contact);
+  const contactText = contacts.join(" | ");
+  const combinedText = [comments, contactText, normalizeText(panel?.textContent)]
+    .filter(Boolean)
+    .join(" | ");
+
   return {
-    routes: getTexts(panel, DETAIL_SELECTORS.route),
-    distanceText: getText(panel, DETAIL_SELECTORS.distance),
-    contacts: getTexts(panel, DETAIL_SELECTORS.contact),
-    comments: getText(panel, DETAIL_SELECTORS.comments),
-    companyDetail: getText(panel, DETAIL_SELECTORS.company),
-    equipmentDetail: getText(panel, DETAIL_SELECTORS.equipmentDetail),
+    route,
+    equipment,
+    rate,
+    marketRates,
+    company,
+    contacts,
+    comments,
+    phoneText:
+      contacts.find((item) => /\d{3}.*\d{3}.*\d{4}/.test(item)) ||
+      company.phone ||
+      "",
+    email: extractEmail(combinedText),
+    website: extractWebsite(combinedText),
   };
 }
 
@@ -259,51 +606,109 @@ function ensureFingerprint(load) {
     load?.distance,
     load?.pickup_date,
     load?.pickup_time,
-    load?.equipment,
+    load?.trailer_type,
     load?.weight,
     load?.broker,
     load?.contact?.phone,
+    load?.external_id,
   ]);
 }
 
 function mergeLoadData(listData, detailData) {
-  const pickup = parsePickup(listData.pickupText);
-  const originText = detailData?.routes?.[0] || listData.originText;
-  const destinationText = detailData?.routes?.[1] || listData.destinationText;
-  const equipment = normalizeText(
-    listData.equipmentText || detailData?.equipmentDetail
+  const route = detailData?.route || {};
+  const equipmentDetails = detailData?.equipment || {};
+  const rateDetails = detailData?.rate || {};
+  const companyDetails = detailData?.company || {};
+  const listCredit = parseCredit(listData.creditText);
+  const pickup = parsePickup(
+    [route.originDateText, route.originTimeText, listData.pickupText]
+      .map(cleanValue)
+      .filter(Boolean)
+      .join(" ")
   );
-  const phone = extractPhone(
-    detailData?.contacts?.find((item) => /\d{3}.*\d{3}.*\d{4}/.test(item)) ||
-      listData.phoneText
+  const originText = route.originText || listData.originText;
+  const destinationText = route.destinationText || listData.destinationText;
+  const trailerType = normalizeEquipment(
+    equipmentDetails.truck || listData.equipmentText
   );
+  const ratePerMileText = cleanValue(
+    rateDetails.ratePerMileText || listData.ratePerMileText
+  );
+  const phone = extractPhone(detailData?.phoneText || listData.phoneText);
   const origin = parseLocation(originText || "Unknown");
   const destination = parseLocation(destinationText || "Unknown");
-  const notes = [
-    detailData?.comments,
-    detailData?.companyDetail,
-    detailData?.equipmentDetail,
-  ]
+
+  origin.date = route.originDateText || null;
+  origin.time = route.originTimeText || null;
+  destination.date = route.destinationDateText || null;
+  destination.time = route.destinationTimeText || null;
+
+  const notes = [detailData?.comments]
     .map(normalizeText)
     .filter(Boolean)
     .join(" | ");
+  const externalId = cleanValue(equipmentDetails.referenceId);
+  const lengthText = cleanValue(equipmentDetails.length || listData.lengthText);
+  const capacityText = cleanValue(equipmentDetails.loadType || listData.capacityText);
+  const commodityText = cleanValue(equipmentDetails.commodity);
+  const weightText = cleanValue(equipmentDetails.weight || listData.weightText);
+  const distanceText = cleanValue(
+    route.distanceText || rateDetails.tripText || listData.distanceText
+  );
+  const marketRates = detailData?.marketRates || {};
+  const email = detailData?.email || extractEmail(notes);
+  const website = detailData?.website || "";
+  const creditScore = companyDetails.creditScore || listCredit.creditScore;
+  const daysToPay = companyDetails.daysToPay || listCredit.daysToPay;
 
   const load = {
     fingerprint: "",
+    external_id: externalId || null,
     source: "collector",
     origin,
     destination,
-    rate: parseMoney(listData.rateText),
-    distance: parseInteger(detailData?.distanceText || listData.distanceText),
+    rate: parseMoney(rateDetails.totalText || listData.rateText),
+    distance: parseInteger(distanceText),
     pickup_date: pickup.pickup_date,
-    pickup_time: pickup.pickup_time,
-    equipment,
-    trailer_type: equipment || null,
-    weight: parseInteger(listData.weightText),
+    pickup_time: pickup.pickup_time || route.originTimeText || null,
+    equipment: trailerType || null,
+    trailer_type: trailerType || null,
+    weight: parseInteger(weightText),
+    dimensions: null,
     broker:
-      normalizeText(listData.companyText || detailData?.companyDetail) || null,
+      cleanValue(companyDetails.name || listData.companyText) || null,
     contact: {
       phone: phone || null,
+      email: email || null,
+      website: website || null,
+      mcNumber: companyDetails.mcNumber || null,
+      companyLocation: companyDetails.location || null,
+      factoringEligible: Boolean(companyDetails.factoringEligible),
+      rating: companyDetails.rating || null,
+      reviews: companyDetails.reviews || null,
+      creditScore: creditScore || null,
+      daysToPay: daysToPay || null,
+      age: cleanValue(listData.ageText) || null,
+      ratePerMile: parseMoney(ratePerMileText),
+      ratePerMileText: ratePerMileText || null,
+      loadType: capacityText || null,
+      length: lengthText || null,
+      capacity: capacityText || null,
+      commodity: commodityText || null,
+      referenceId: externalId || null,
+      marketRates: {
+        spotRate: parseMoney(marketRates.spotRateText),
+        spotRateText: formatMoney(marketRates.spotRateText),
+        spotRatePerMile: parseMoney(marketRates.spotRatePerMileText),
+        spotRatePerMileText: cleanValue(marketRates.spotRatePerMileText),
+        spotAverageText: cleanValue(marketRates.spotAverageText),
+        rangeText: cleanValue(marketRates.rangeText),
+        rangeLowText: cleanValue(marketRates.rangeLowText),
+        rangeHighText: cleanValue(marketRates.rangeHighText),
+        rangePerMileLowText: cleanValue(marketRates.rangePerMileLowText),
+        rangePerMileHighText: cleanValue(marketRates.rangePerMileHighText),
+        contractUnavailable: Boolean(marketRates.contractUnavailable),
+      },
     },
     notes: notes || null,
     received_at: new Date().toISOString(),
@@ -623,7 +1028,9 @@ async function initialize() {
     return;
   }
 
-  console.log("[TransIO] Extension is disabled. Use the popup button to begin.");
+  console.log(
+    "[TransIO] Extension is disabled. Use the popup button to begin."
+  );
 }
 
 void initialize();

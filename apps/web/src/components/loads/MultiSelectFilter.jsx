@@ -23,7 +23,7 @@ export function MultiSelectFilter({
   values = [],
   options = [],
   onChange,
-  placeholder = "Any",
+  placeholder,
   searchable = false,
   className,
 }) {
@@ -56,7 +56,7 @@ export function MultiSelectFilter({
 
   const summary =
     values.length === 0
-      ? placeholder
+      ? ""
       : values.length === 1
       ? values[0]
       : `${values.length} selected`;
@@ -73,7 +73,9 @@ export function MultiSelectFilter({
           )}
         >
           <span className="min-w-0 truncate text-left">
-            <span className="mr-1 text-muted-foreground">{label}</span>
+            <span className={values.length > 0 ? "mr-1 text-muted-foreground" : ""}>
+              {label}
+            </span>
             {summary}
           </span>
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />

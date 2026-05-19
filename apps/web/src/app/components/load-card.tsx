@@ -26,6 +26,54 @@ interface LoadCardProps {
   onToggle: () => void;
 }
 
+function cleanDisplay(value: string | number | null | undefined) {
+  return String(value ?? "").trim();
+}
+
+function formatPerMileLabel(rawValue: string, fallback: number) {
+  const clean = rawValue.replace(/[()*]/g, "").trim();
+
+  if (clean) {
+    return /\/mi\b/i.test(clean) ? clean : `${clean}/mi`;
+  }
+
+  return `$${fallback.toFixed(2)}/mi`;
+}
+
+function CompactField({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: React.ReactNode;
+  accent?: boolean;
+}) {
+  if (
+    value === null ||
+    value === undefined ||
+    (typeof value === "string" && value.trim() === "")
+  ) {
+    return null;
+  }
+
+  return (
+    <div className="min-w-0">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        {label}
+      </p>
+      <p
+        className={cn(
+          "truncate text-xs font-medium text-foreground",
+          accent && "text-emerald-600 dark:text-emerald-300"
+        )}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
 export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
   const { savedLoadIds, bookedLoadIds, toggleSavedLoad, bookLoad } =
     useAppState();
@@ -74,10 +122,30 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
     }
   };
 
-  const perMile =
-    load.distance > 0 ? (load.rate / load.distance).toFixed(2) : "0.00";
+  const numericPerMile =
+    load.ratePerMile > 0
+      ? load.ratePerMile
+      : load.distance > 0
+      ? load.rate / load.distance
+      : 0;
+  const perMileLabel = formatPerMileLabel(
+    load.contact.ratePerMileText,
+    numericPerMile
+  );
   const originLabel = formatLoadLocation(load.origin);
   const destinationLabel = formatLoadLocation(load.destination);
+  const hasRealPhone = Boolean(
+    cleanDisplay(load.contact.phone) &&
+      cleanDisplay(load.contact.phone) !== "(000) 000-0000"
+  );
+  const equipmentSummary = [load.length, load.capacity || load.loadType]
+    .map(cleanDisplay)
+    .filter(Boolean)
+    .join(" / ");
+  const market = load.contact.marketRates;
+  const hasMarketRates =
+    Boolean(market.spotRateText || market.spotRatePerMileText || market.rangeText) ||
+    market.contractUnavailable;
 
   return (
     <motion.div
@@ -144,6 +212,9 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
                   <Weight className="h-3 w-3" />
                   <span>{load.weight.toLocaleString()} lbs</span>
                 </div>
+                {equipmentSummary && (
+                  <span className="truncate">{equipmentSummary}</span>
+                )}
               </div>
             </div>
 
@@ -166,7 +237,9 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
               <p className="text-sm font-semibold leading-tight text-foreground">
                 ${load.rate.toLocaleString()}
               </p>
-              <p className="text-[10px] text-muted-foreground">${perMile}/mi</p>
+              <p className="text-[10px] text-muted-foreground">
+                {perMileLabel}
+              </p>
             </div>
 
             <div className="flex min-w-0 items-center justify-between gap-1 sm:justify-start lg:justify-end">
@@ -249,29 +322,38 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
                       <h4 className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
                         Load Specifications
                       </h4>
-                      <div className="grid grid-cols-1 gap-1.5 text-xs sm:grid-cols-2">
-                        <div>
-                          <span className="text-muted-foreground">Weight:</span>
-                          <span className="ml-2 text-foreground">
-                            {load.weight.toLocaleString()} lbs
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">
-                            Dimensions:
-                          </span>
-                          <span className="ml-2 text-foreground">
-                            {load.dimensions}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">
-                            Reference:
-                          </span>
-                          <span className="ml-2 text-foreground">
-                            {load.referenceId}
-                          </span>
-                        </div>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-4">
+                        <CompactField
+                          label="Weight"
+                          value={
+                            load.weight > 0
+                              ? `${load.weight.toLocaleString()} lbs`
+                              : ""
+                          }
+                        />
+                        <CompactField
+                          label="Truck"
+                          value={load.trailerType}
+                        />
+                        <CompactField
+                          label="Load"
+                          value={load.loadType || load.capacity}
+                        />
+                        <CompactField label="Length" value={load.length} />
+                        <CompactField
+                          label="Commodity"
+                          value={load.commodity || ""}
+                        />
+                        <CompactField
+                          label="Trip"
+                          value={
+                            load.distance > 0
+                              ? `${load.distance.toLocaleString()} mi`
+                              : ""
+                          }
+                        />
+                        <CompactField label="RPM" value={perMileLabel} />
+                        <CompactField label="Reference" value={load.referenceId} />
                       </div>
                     </div>
 
@@ -279,26 +361,139 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
                       <h4 className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
                         Broker Information
                       </h4>
-                      <p className="mb-2 text-sm text-foreground">
-                        {load.broker}
-                      </p>
-                      <div className="flex flex-wrap gap-2.5 text-xs">
-                        <a
-                          href={`tel:${load.contact.phone}`}
-                          className="flex items-center gap-1.5 text-foreground underline-offset-4 hover:underline"
-                        >
-                          <Phone className="h-3.5 w-3.5" />
-                          {load.contact.phone}
-                        </a>
-                        <a
-                          href={`mailto:${load.contact.email}`}
-                          className="flex items-center gap-1.5 text-foreground underline-offset-4 hover:underline"
-                        >
-                          <Mail className="h-3.5 w-3.5" />
-                          {load.contact.email}
-                        </a>
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium text-foreground">
+                          {load.broker}
+                        </p>
+                        {load.contact.mcNumber && (
+                          <Badge className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[9px] font-semibold text-foreground">
+                            {load.contact.mcNumber}
+                          </Badge>
+                        )}
+                        {load.contact.factoringEligible && (
+                          <Badge className="rounded-md border border-emerald-600/25 bg-emerald-600/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 dark:text-emerald-300">
+                            Factoring
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-4">
+                        <CompactField
+                          label="Phone"
+                          value={
+                            hasRealPhone ? (
+                              <a
+                                href={`tel:${load.contact.phone}`}
+                                className="inline-flex min-w-0 items-center gap-1 underline-offset-4 hover:underline"
+                              >
+                                <Phone className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">
+                                  {load.contact.phone}
+                                </span>
+                              </a>
+                            ) : (
+                              ""
+                            )
+                          }
+                        />
+                        <CompactField
+                          label="Email"
+                          value={
+                            load.contact.email ? (
+                              <a
+                                href={`mailto:${load.contact.email}`}
+                                className="inline-flex min-w-0 items-center gap-1 underline-offset-4 hover:underline"
+                              >
+                                <Mail className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">
+                                  {load.contact.email}
+                                </span>
+                              </a>
+                            ) : (
+                              ""
+                            )
+                          }
+                        />
+                        <CompactField
+                          label="Location"
+                          value={load.contact.companyLocation}
+                        />
+                        <CompactField
+                          label="Credit"
+                          value={[load.contact.creditScore, load.contact.daysToPay]
+                            .filter(Boolean)
+                            .join(" / ")}
+                        />
+                        <CompactField
+                          label="Rating"
+                          value={
+                            load.contact.rating
+                              ? `${load.contact.rating}/5${
+                                  load.contact.reviews
+                                    ? ` (${load.contact.reviews})`
+                                    : ""
+                                }`
+                              : ""
+                          }
+                        />
+                        <CompactField label="Age" value={load.contact.age} />
+                        <CompactField
+                          label="Website"
+                          value={load.contact.website}
+                        />
                       </div>
                     </div>
+
+                    {hasMarketRates && (
+                      <div className="rounded-md border border-border bg-card p-2.5">
+                        <h4 className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
+                          Rate & Market
+                        </h4>
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-4">
+                          <CompactField
+                            label="Total"
+                            value={`$${load.rate.toLocaleString()}`}
+                          />
+                          <CompactField label="Load RPM" value={perMileLabel} />
+                          <CompactField
+                            label="Spot"
+                            value={market.spotRateText}
+                            accent
+                          />
+                          <CompactField
+                            label="Spot RPM"
+                            value={market.spotRatePerMileText}
+                            accent
+                          />
+                          <CompactField
+                            label="30d Avg"
+                            value={market.spotAverageText}
+                          />
+                          <CompactField
+                            label="Range"
+                            value={
+                              market.rangeLowText && market.rangeHighText
+                                ? `${market.rangeLowText} - ${market.rangeHighText}`
+                                : market.rangeText
+                            }
+                          />
+                          <CompactField
+                            label="Range RPM"
+                            value={
+                              market.rangePerMileLowText &&
+                              market.rangePerMileHighText
+                                ? `${market.rangePerMileLowText} - ${market.rangePerMileHighText}`
+                                : ""
+                            }
+                          />
+                          <CompactField
+                            label="Contract"
+                            value={
+                              market.contractUnavailable ? "Unavailable" : ""
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
 
                     {load.notes && (
                       <div className="rounded-md border border-border bg-card p-2.5">
@@ -334,8 +529,12 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
                         <Button
                           variant="outline"
                           className="h-8 w-full rounded-md border-border text-xs text-foreground hover:bg-accent"
+                          disabled={!hasRealPhone}
                           onClick={(event) => {
                             event.stopPropagation();
+                            if (!hasRealPhone) {
+                              return;
+                            }
                             window.location.href = `tel:${load.contact.phone}`;
                           }}
                         >

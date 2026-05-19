@@ -17,6 +17,25 @@ function formatRangeValue(value, prefix, suffix) {
   return `${prefix}${Number(value).toLocaleString()}${suffix}`;
 }
 
+function rangeSummary(minValue, maxValue, prefix, suffix) {
+  const minLabel = formatRangeValue(minValue, prefix, suffix);
+  const maxLabel = formatRangeValue(maxValue, prefix, suffix);
+
+  if (minLabel && maxLabel) {
+    return `${minLabel} - ${maxLabel}`;
+  }
+
+  if (minLabel) {
+    return `Min ${minLabel}`;
+  }
+
+  if (maxLabel) {
+    return `Max ${maxLabel}`;
+  }
+
+  return "";
+}
+
 export function RangeFilter({
   label,
   minValue = "",
@@ -30,10 +49,8 @@ export function RangeFilter({
 }) {
   const hasValue = minValue !== "" || maxValue !== "";
   const summary = hasValue
-    ? `${formatRangeValue(minValue, prefix, suffix) || "Any"} - ${
-        formatRangeValue(maxValue, prefix, suffix) || "Any"
-      }`
-    : "Any";
+    ? rangeSummary(minValue, maxValue, prefix, suffix)
+    : "";
 
   return (
     <Popover>
@@ -47,7 +64,9 @@ export function RangeFilter({
           )}
         >
           <span className="min-w-0 truncate text-left">
-            <span className="mr-1 text-muted-foreground">{label}</span>
+            <span className={hasValue ? "mr-1 text-muted-foreground" : ""}>
+              {label}
+            </span>
             {summary}
           </span>
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
