@@ -45,6 +45,9 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
     "Dry Van": "border-border bg-muted text-foreground",
     Reefer: "border-border bg-muted text-foreground",
     Flatbed: "border-border bg-muted text-foreground",
+    "Power Only": "border-border bg-muted text-foreground",
+    "Box Truck": "border-border bg-muted text-foreground",
+    Other: "border-border bg-muted text-foreground",
   };
 
   const statusColors: Record<string, string> = {
@@ -92,7 +95,7 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
         onClick={onToggle}
       >
         <div className="px-2 py-1 sm:px-2.5">
-          <div className="grid gap-1.5 lg:grid-cols-[126px_minmax(190px,1fr)_108px_88px_104px] lg:items-center">
+          <div className="grid gap-1.5 lg:grid-cols-[126px_minmax(180px,1fr)_108px_96px_128px] lg:items-center">
             <div className="flex min-w-0 flex-wrap items-center gap-1 lg:block lg:space-y-1">
               <Badge className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-foreground">
                 Ref {load.referenceId}
@@ -168,7 +171,7 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
 
             <div className="flex min-w-0 items-center justify-between gap-1 sm:justify-start lg:justify-end">
               <Button
-                className="h-7 min-w-[56px] flex-shrink-0 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
+                className="h-7 min-w-[54px] flex-shrink-0 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
                 onClick={handleBook}
               >
                 {isBooked ? "Booked" : "Book"}

@@ -16,7 +16,13 @@ export interface Load {
   rate: number;
   pickupDate: string;
   pickupTime: string;
-  trailerType: "Dry Van" | "Reefer" | "Flatbed";
+  trailerType:
+    | "Dry Van"
+    | "Reefer"
+    | "Flatbed"
+    | "Power Only"
+    | "Box Truck"
+    | "Other";
   weight: number;
   dimensions: string;
   broker: string;
@@ -66,11 +72,28 @@ export interface ApiLoad {
 function normalizeTrailerType(
   value: string | null | undefined
 ): Load["trailerType"] {
-  if (value === "Reefer" || value === "Flatbed") {
-    return value;
-  }
+  const normalized = cleanText(value).toLowerCase();
 
-  return "Dry Van";
+  switch (normalized) {
+    case "reefer":
+    case "refrigerated":
+      return "Reefer";
+    case "flatbed":
+    case "flat bed":
+      return "Flatbed";
+    case "power only":
+    case "power-only":
+      return "Power Only";
+    case "box truck":
+    case "boxtruck":
+      return "Box Truck";
+    case "other":
+      return "Other";
+    case "dry van":
+    case "van":
+    default:
+      return "Dry Van";
+  }
 }
 
 function normalizeStatus(value: string | null | undefined): Load["status"] {

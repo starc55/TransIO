@@ -86,31 +86,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <X className="h-4 w-4" />
               </Button>
             </div>
-
-            <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/55 p-3 shadow-sm backdrop-blur-xl">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-md border border-sidebar-border bg-sidebar px-3 py-2.5">
-                  <div className="mb-1 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-sidebar-foreground/55">
-                    <Radio className="h-3 w-3 text-sidebar-foreground" />
-                    Live
-                  </div>
-                  <p className="text-lg font-semibold text-sidebar-foreground">
-                    {allLoads.length}
-                  </p>
-                  <p className="text-xs text-sidebar-foreground/60">loads</p>
-                </div>
-                <div className="rounded-md border border-sidebar-border bg-sidebar px-3 py-2.5">
-                  <div className="mb-1 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-sidebar-foreground/55">
-                    <BellRing className="h-3 w-3 text-sidebar-foreground" />
-                    Inbox
-                  </div>
-                  <p className="text-lg font-semibold text-sidebar-foreground">
-                    {unreadNotifications}
-                  </p>
-                  <p className="text-xs text-sidebar-foreground/60">unread</p>
-                </div>
-              </div>
-            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto px-3 py-4">
