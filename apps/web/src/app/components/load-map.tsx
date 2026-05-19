@@ -8,14 +8,17 @@ interface LoadMapProps {
 }
 
 function formatMapLocation(location: Load["origin"]) {
+  const cityState = formatLoadLocation(location);
   const address =
     location.address && location.address !== "Unknown address"
       ? location.address
       : "";
 
-  return [address, location.city, location.state]
-    .filter(Boolean)
-    .join(", ");
+  if (address && address.toLowerCase() !== cityState.toLowerCase()) {
+    return address;
+  }
+
+  return cityState;
 }
 
 function buildMapsRoute(load: Load) {
@@ -73,7 +76,7 @@ export function LoadMap({ load }: LoadMapProps) {
         <button
           type="button"
           onClick={() => setMapOpen(true)}
-          className="relative block aspect-[4/3] min-h-[230px] w-full overflow-hidden bg-muted text-left"
+          className="relative block aspect-[16/7] min-h-[150px] w-full overflow-hidden bg-muted text-left"
           aria-label="Open larger route map"
         >
           <iframe

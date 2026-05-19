@@ -294,35 +294,17 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
               transition={{ duration: 0.24 }}
               className="overflow-hidden"
             >
-              <div className="border-t border-border bg-muted/35 px-2.5 py-2.5 sm:px-3">
-                <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,1.35fr)_240px]">
-                  <div className="space-y-2.5">
-                    <div className="grid gap-2.5 sm:grid-cols-2">
-                      <div>
-                        <h4 className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
-                          <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                          Pickup Location
-                        </h4>
-                        <p className="text-xs leading-5 text-muted-foreground">
-                          {load.origin.address || originLabel}
-                        </p>
-                      </div>
-                      <div>
-                        <h4 className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
-                          <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                          Delivery Location
-                        </h4>
-                        <p className="text-xs leading-5 text-muted-foreground">
-                          {load.destination.address || destinationLabel}
-                        </p>
-                      </div>
+              <div className="border-t border-border bg-muted/35 p-2.5 sm:p-3">
+                <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-3">
+                  <section className="rounded-md border border-border bg-card p-3">
+                    <div className="mb-3 flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <h4 className="text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
+                        Load Information
+                      </h4>
                     </div>
 
-                    <div className="rounded-md border border-border bg-card p-2.5">
-                      <h4 className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
-                        Load Specifications
-                      </h4>
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-2">
                         <CompactField
                           label="Weight"
                           value={
@@ -355,16 +337,64 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
                         <CompactField label="RPM" value={perMileLabel} />
                         <CompactField label="Reference" value={load.referenceId} />
                       </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-0 border-t border-border pt-3">
+                      <div className="min-w-0 border-r border-border pr-3">
+                        <p className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-emerald-600 dark:text-emerald-300">
+                          <span className="h-2 w-2 rounded-full bg-emerald-600" />
+                          Pickup
+                        </p>
+                        <p className="mt-1 truncate text-xs font-semibold text-foreground">
+                          {originLabel}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          {load.origin.date || formatDate(load.pickupDate)}
+                        </p>
+                        <p className="text-[11px] text-emerald-600 dark:text-emerald-300">
+                          {load.origin.time || load.pickupTime}
+                        </p>
+                      </div>
+                      <div className="min-w-0 pl-3">
+                        <p className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-blue-600 dark:text-blue-300">
+                          <span className="h-2 w-2 rounded-full bg-blue-600" />
+                          Delivery
+                        </p>
+                        <p className="mt-1 truncate text-xs font-semibold text-foreground">
+                          {destinationLabel}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          {load.destination.date || "-"}
+                        </p>
+                        <p className="text-[11px] text-blue-600 dark:text-blue-300">
+                          {load.destination.time ||
+                            (load.distance > 0
+                              ? `${load.distance.toLocaleString()} mi`
+                              : "")}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="rounded-md border border-border bg-card p-2.5">
-                      <h4 className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
-                        Broker Information
-                      </h4>
-                      <div className="mb-2 flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-medium text-foreground">
-                          {load.broker}
+                    {load.notes && (
+                      <div className="mt-3 border-t border-border pt-3">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                          Comments
                         </p>
+                        <p className="mt-1 text-xs leading-5 text-foreground">
+                          {load.notes}
+                        </p>
+                      </div>
+                    )}
+                  </section>
+
+                  <section className="rounded-md border border-border bg-card p-3">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <h4 className="text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
+                        Broker Information
+                        </h4>
+                      </div>
+                      <div className="flex shrink-0 flex-wrap justify-end gap-1">
                         {load.contact.mcNumber && (
                           <Badge className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[9px] font-semibold text-foreground">
                             {load.contact.mcNumber}
@@ -376,7 +406,13 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
                           </Badge>
                         )}
                       </div>
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-4">
+                    </div>
+
+                    <p className="mb-3 text-sm font-semibold text-foreground">
+                      {load.broker}
+                    </p>
+
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
                         <CompactField
                           label="Phone"
                           value={
@@ -441,14 +477,13 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
                           value={load.contact.website}
                         />
                       </div>
-                    </div>
 
                     {hasMarketRates && (
-                      <div className="rounded-md border border-border bg-card p-2.5">
-                        <h4 className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
+                      <div className="mt-3 border-t border-border pt-3">
+                        <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                           Rate & Market
-                        </h4>
-                        <div className="grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-4">
+                        </p>
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
                           <CompactField
                             label="Total"
                             value={`$${load.rate.toLocaleString()}`}
@@ -494,41 +529,29 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
                         </div>
                       </div>
                     )}
+                  </section>
 
-                    {load.notes && (
-                      <div className="rounded-md border border-border bg-card p-2.5">
-                        <h4 className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
-                          Additional Notes
-                        </h4>
-                        <p className="text-xs leading-5 text-muted-foreground">
-                          {load.notes}
-                        </p>
-                      </div>
-                    )}
+                  <LoadMap load={load} />
+                </div>
+
+                <div className="mt-2.5 grid gap-2.5 rounded-md border border-border bg-card p-3 md:grid-cols-[minmax(0,1fr)_152px_152px_152px] md:items-center">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      Actions
+                    </p>
+                    <p className="mt-1 text-xs text-foreground">
+                      {isBooked ? "Booked" : "Available"}
+                    </p>
                   </div>
-
-                  <div className="space-y-2.5">
-                    <LoadMap load={load} />
-
-                    <div className="rounded-md border border-border bg-card p-2.5">
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
-                          Actions
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {isBooked ? "Booked" : "Available"}
-                        </span>
-                      </div>
-                      <div className="space-y-1.5">
                         <Button
-                          className="h-8 w-full rounded-md bg-primary text-xs text-primary-foreground hover:bg-primary/90"
+                    className="h-9 w-full rounded-md bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90"
                           onClick={handleBook}
                         >
                           {isBooked ? "Booked" : "Book Now"}
                         </Button>
                         <Button
                           variant="outline"
-                          className="h-8 w-full rounded-md border-border text-xs text-foreground hover:bg-accent"
+                    className="h-9 w-full rounded-md border-border text-xs text-foreground hover:bg-accent"
                           disabled={!hasRealPhone}
                           onClick={(event) => {
                             event.stopPropagation();
@@ -543,7 +566,7 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
                         </Button>
                         <Button
                           variant="outline"
-                          className="h-8 w-full rounded-md border-border text-xs text-foreground hover:bg-accent"
+                    className="h-9 w-full rounded-md border-border text-xs text-foreground hover:bg-accent"
                           onClick={handleToggleSaved}
                         >
                           <Bookmark
@@ -554,9 +577,6 @@ export function LoadCard({ load, isExpanded, onToggle }: LoadCardProps) {
                           />
                           {isSaved ? "Saved" : "Save Load"}
                         </Button>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </motion.div>
