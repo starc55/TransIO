@@ -31,6 +31,7 @@ const LIST_SELECTORS = {
 
 const DETAIL_SELECTORS = {
   panel: ".expanded-detail-row, .details",
+  tripPlace: ".trip-place",
   distance: ".trip-miles",
   contact: '[data-test="contact-information-container"] a, dat-contacts a',
   comments: '[data-test="comments-container"] .notes-contents',
@@ -197,7 +198,10 @@ function normalizeEquipment(value) {
 }
 
 function parseLocation(text) {
-  const raw = normalizeText(text);
+  const raw = normalizeText(text)
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
   if (!raw) {
     return {
@@ -207,11 +211,19 @@ function parseLocation(text) {
     };
   }
 
-  const [cityPart = raw, statePart = ""] = raw.split(",");
+  const match = raw.match(/^(.+?),\s*([A-Z]{2})$/i);
+
+  if (!match) {
+    return {
+      city: raw,
+      state: "",
+      address: raw,
+    };
+  }
 
   return {
-    city: normalizeText(cityPart) || raw,
-    state: normalizeText(statePart.split(" ")[0]),
+    city: normalizeText(match[1]),
+    state: normalizeText(match[2]).toUpperCase(),
     address: raw,
   };
 }
@@ -261,7 +273,8 @@ function extractReferenceId(value, allowLoose = false) {
     }
 
     const labelIndex = clean.search(/\bReference\s*ID\b/i);
-    const labelTail = labelIndex === -1 ? "" : clean.slice(labelIndex, labelIndex + 120);
+    const labelTail =
+      labelIndex === -1 ? "" : clean.slice(labelIndex, labelIndex + 120);
 
     for (const match of labelTail.matchAll(/\b[A-Z0-9][A-Z0-9-]{3,}\b/gi)) {
       const candidate = normalizeCandidate(match[0]);
@@ -496,7 +509,9 @@ function getListLocationText(row, selector) {
   const locationParts = Array.from(
     locationRoot.querySelectorAll(".city-state-container")
   );
-  const originPart = locationParts.find((element) => element !== destinationRoot);
+  const originPart = locationParts.find(
+    (element) => element !== destinationRoot
+  );
 
   if (originPart) {
     return cleanValue(originPart.textContent);
@@ -561,14 +576,30 @@ function extractListData(row) {
 }
 
 function extractRouteDetails(panel) {
+  const tripPlace = panel?.querySelector(DETAIL_SELECTORS.tripPlace);
+  const tripDivs = Array.from(tripPlace?.querySelectorAll(":scope > div") ?? [])
+    .map((el) => cleanValue(el.textContent))
+    .filter(Boolean);
+
+  const headerOrigin = tripDivs[0] || "";
+  const headerDestination = tripDivs[1] || "";
+
   const routeRoot = panel?.querySelector("dat-route") ?? panel;
-  const originText = getRouteLocationText(routeRoot, "origin");
-  const destinationText = getRouteLocationText(routeRoot, "destination");
+
+  const originText =
+    headerOrigin || getRouteLocationText(routeRoot, "origin");
+
+  const destinationText =
+    headerDestination || getRouteLocationText(routeRoot, "destination");
+
   const originDateText = getFirstText(routeRoot, [
     ".route-origin .date",
     '[data-test="load-pick-up-cell"]',
   ]);
-  const destinationDateText = getFirstText(routeRoot, [".route-destination .date"]);
+
+  const destinationDateText = getFirstText(routeRoot, [
+    ".route-destination .date",
+  ]);
 
   return {
     originText,
@@ -577,7 +608,10 @@ function extractRouteDetails(panel) {
     originTimeText: getFirstText(routeRoot, [".route-origin .hours"]),
     destinationDateText,
     destinationTimeText: getFirstText(routeRoot, [".route-destination .hours"]),
-    distanceText: getFirstText(routeRoot, [".trip-miles", '[data-test="load-trip-cell"]']),
+    distanceText: getFirstText(panel, [
+      ".trip-miles",
+      '[data-test="load-trip-cell"]',
+    ]),
   };
 }
 
@@ -666,13 +700,18 @@ function extractCompanyDetails(panel) {
   }
 
   return {
-    name: getFirstText(companyRoot, [".company-details", '[data-test="load-company-cell"]']),
+    name: getFirstText(companyRoot, [
+      ".company-details",
+      '[data-test="load-company-cell"]',
+    ]),
     phone: extractPhone(phoneText),
     mcNumber:
       extractMcNumber(companyText) || extractMcNumber(panel?.textContent),
     location: getFirstText(companyRoot, [".light-text"]),
     factoringEligible: /factoring eligible/i.test(companyText),
-    rating: companyRoot.querySelectorAll('[data-mat-icon-name="star-dark"]').length || null,
+    rating:
+      companyRoot.querySelectorAll('[data-mat-icon-name="star-dark"]').length ||
+      null,
     reviews: reviews ? reviews.replace(/[()]/g, "") : "",
   };
 }
@@ -686,7 +725,11 @@ function extractDetailData(panel) {
   const comments = getText(panel, DETAIL_SELECTORS.comments);
   const contacts = getTexts(panel, DETAIL_SELECTORS.contact);
   const contactText = contacts.join(" | ");
-  const combinedText = [comments, contactText, normalizeText(panel?.textContent)]
+  const combinedText = [
+    comments,
+    contactText,
+    normalizeText(panel?.textContent),
+  ]
     .filter(Boolean)
     .join(" | ");
 
@@ -748,7 +791,8 @@ function mergeLoadData(listData, detailData) {
   const ratePerMileText = cleanValue(
     rateDetails.ratePerMileText || listData.ratePerMileText
   );
-  const phone = extractPhone(detailData?.phoneText) || extractPhone(listData.phoneText);
+  const phone =
+    extractPhone(detailData?.phoneText) || extractPhone(listData.phoneText);
   const origin = parseLocation(originText || "Unknown");
   const destination = parseLocation(destinationText || "Unknown");
 
@@ -766,7 +810,9 @@ function mergeLoadData(listData, detailData) {
     extractReferenceId(detailData?.rawText) ||
     "";
   const lengthText = cleanValue(equipmentDetails.length || listData.lengthText);
-  const capacityText = cleanValue(equipmentDetails.loadType || listData.capacityText);
+  const capacityText = cleanValue(
+    equipmentDetails.loadType || listData.capacityText
+  );
   const commodityText = cleanValue(equipmentDetails.commodity);
   const weightText = cleanValue(equipmentDetails.weight || listData.weightText);
   const distanceText = cleanValue(
@@ -792,8 +838,7 @@ function mergeLoadData(listData, detailData) {
     trailer_type: trailerType || null,
     weight: parseInteger(weightText),
     dimensions: null,
-    broker:
-      cleanValue(companyDetails.name || listData.companyText) || null,
+    broker: cleanValue(companyDetails.name || listData.companyText) || null,
     contact: {
       phone: phone || null,
       email: email || null,
