@@ -33,6 +33,17 @@ function buildChips(filters) {
     chips.push({ key: "search", label: `Search: ${filters.search.trim()}` });
   }
 
+  if (filters.origin?.trim()) {
+    chips.push({ key: "origin", label: `Origin: ${filters.origin.trim()}` });
+  }
+
+  if (filters.destination?.trim()) {
+    chips.push({
+      key: "destination",
+      label: `Destination: ${filters.destination.trim()}`,
+    });
+  }
+
   filters.equipment?.forEach((value) => {
     chips.push({ key: "equipment", value, label: `Equipment: ${value}` });
   });

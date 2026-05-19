@@ -26,6 +26,8 @@ export type LoadSortOption = "rate-high" | "rate-low" | "distance" | "date";
 
 export interface LoadQueryFilters {
   search?: string;
+  origin?: string;
+  destination?: string;
   equipment?: string[];
   originState?: string[];
   destinationState?: string[];
@@ -87,6 +89,8 @@ function toNumber(value: number | undefined) {
 
 function applyLoadFilters(query: any, filters: LoadQueryFilters = {}) {
   const search = sanitizePatternTerm(filters.search);
+  const origin = sanitizePatternTerm(filters.origin);
+  const destination = sanitizePatternTerm(filters.destination);
   const equipment = cleanList(filters.equipment);
   const originState = cleanList(filters.originState);
   const destinationState = cleanList(filters.destinationState);
@@ -111,6 +115,28 @@ function applyLoadFilters(query: any, filters: LoadQueryFilters = {}) {
         `broker.ilike.${pattern}`,
         `contact->>phone.ilike.${pattern}`,
         `trailer_type.ilike.${pattern}`,
+      ].join(",")
+    );
+  }
+
+  if (origin) {
+    const pattern = `*${origin}*`;
+    query = query.or(
+      [
+        `origin->>city.ilike.${pattern}`,
+        `origin->>state.ilike.${pattern}`,
+        `origin->>address.ilike.${pattern}`,
+      ].join(",")
+    );
+  }
+
+  if (destination) {
+    const pattern = `*${destination}*`;
+    query = query.or(
+      [
+        `destination->>city.ilike.${pattern}`,
+        `destination->>state.ilike.${pattern}`,
+        `destination->>address.ilike.${pattern}`,
       ].join(",")
     );
   }

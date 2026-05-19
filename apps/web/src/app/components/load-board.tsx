@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 import { LoadCard } from "./load-card";
-import { type Load } from "../data/loads";
+import { formatLoadLocation, type Load } from "../data/loads";
 import { RefreshCw, Radio, SlidersHorizontal } from "lucide-react";
 import { Button } from "./ui/button";
 import {
@@ -43,6 +43,8 @@ type PickupPreset = "" | "today" | "tomorrow" | "this-week" | "custom";
 
 interface LoadBoardFilters {
   search: string;
+  origin: string;
+  destination: string;
   equipment: string[];
   originState: string[];
   destinationState: string[];
@@ -58,6 +60,8 @@ interface LoadBoardFilters {
 
 const DEFAULT_FILTERS: LoadBoardFilters = {
   search: "",
+  origin: "",
+  destination: "",
   equipment: [],
   originState: [],
   destinationState: [],
@@ -116,6 +120,8 @@ function parseLoadFilters(
 ): LoadBoardFilters {
   return {
     search: params.get("q") || fallbackSearch || "",
+    origin: params.get("origin") || "",
+    destination: params.get("destination") || "",
     equipment: parseEquipmentParam(params.get("equipment")),
     originState: parseStateParam(params.get("originState")),
     destinationState: parseStateParam(params.get("destinationState")),
@@ -128,11 +134,6 @@ function parseLoadFilters(
     pickupPreset: parsePickupPreset(params.get("pickup")),
     pickupDate: params.get("pickupDate") || "",
   };
-}
-
-function parsePage(params: URLSearchParams) {
-  const page = Number(params.get("page") || 1);
-  return Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
 }
 
 function cleanNumericInput(value: unknown) {
@@ -150,6 +151,8 @@ function sanitizeFilters(filters: LoadBoardFilters): LoadBoardFilters {
   return {
     ...DEFAULT_FILTERS,
     ...filters,
+    origin: String(filters.origin || "").slice(0, 90),
+    destination: String(filters.destination || "").slice(0, 90),
     equipment: Array.from(new Set(filters.equipment || [])).filter((item) =>
       EQUIPMENT_VALUES.includes(item)
     ),
@@ -168,11 +171,19 @@ function sanitizeFilters(filters: LoadBoardFilters): LoadBoardFilters {
   };
 }
 
-function buildSearchParams(filters: LoadBoardFilters, page: number) {
+function buildSearchParams(filters: LoadBoardFilters) {
   const params = new URLSearchParams();
 
   if (filters.search.trim()) {
     params.set("q", filters.search.trim());
+  }
+
+  if (filters.origin.trim()) {
+    params.set("origin", filters.origin.trim());
+  }
+
+  if (filters.destination.trim()) {
+    params.set("destination", filters.destination.trim());
   }
 
   if (filters.equipment.length > 0) {
@@ -217,10 +228,6 @@ function buildSearchParams(filters: LoadBoardFilters, page: number) {
 
   if (filters.pickupPreset === "custom" && filters.pickupDate) {
     params.set("pickupDate", filters.pickupDate);
-  }
-
-  if (page > 1) {
-    params.set("page", String(page));
   }
 
   return params;
@@ -290,6 +297,8 @@ function useDebouncedValue<T>(value: T, delay: number) {
 function hasActiveFilters(filters: LoadBoardFilters) {
   return (
     filters.search.trim() ||
+    filters.origin.trim() ||
+    filters.destination.trim() ||
     filters.equipment.length > 0 ||
     filters.originState.length > 0 ||
     filters.destinationState.length > 0 ||
@@ -315,7 +324,8 @@ export function LoadBoard() {
   } = useAppState();
   const [expandedLoadId, setExpandedLoadId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<LoadSortOption>("date");
-  const [currentPage, setCurrentPage] = useState(() => parsePage(searchParams));
+  const [nextPage, setNextPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [filters, setFilters] = useState<LoadBoardFilters>(() =>
     parseLoadFilters(searchParams, searchQuery)
   );
@@ -323,8 +333,11 @@ export function LoadBoard() {
   const [loads, setLoads] = useState<Load[]>([]);
   const [totalLoads, setTotalLoads] = useState(0);
   const [isBoardLoading, setIsBoardLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [boardError, setBoardError] = useState("");
   const requestIdRef = useRef(0);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreTargetRef = useRef<HTMLDivElement | null>(null);
   const initialUrlSearchRef = useRef(searchParams.get("q") || "");
   const skipInitialUrlSearchSyncRef = useRef(initialUrlSearchRef.current || "");
   const debouncedSearch = useDebouncedValue(filters.search, 350);
@@ -354,22 +367,24 @@ export function LoadBoard() {
 
     filterSearchRef.current = searchQuery;
     setFilters((current) => ({ ...current, search: searchQuery }));
-    setCurrentPage(1);
+    setNextPage(1);
   }, [searchQuery]);
 
   useEffect(() => {
-    const nextParams = buildSearchParams(filters, currentPage);
+    const nextParams = buildSearchParams(filters);
 
     if (nextParams.toString() !== searchParams.toString()) {
       setSearchParams(nextParams, { replace: true });
     }
-  }, [currentPage, filters, searchParams, setSearchParams]);
+  }, [filters, searchParams, setSearchParams]);
 
   const supabaseFilters = useMemo<LoadQueryFilters>(() => {
     const range = pickupRange(filters);
 
     return {
       search: debouncedSearch,
+      origin: filters.origin,
+      destination: filters.destination,
       equipment: filters.equipment,
       originState: filters.originState,
       destinationState: filters.destinationState,
@@ -396,61 +411,125 @@ export function LoadBoard() {
     return Array.from(options);
   }, [contextLoads, loads]);
 
-  const totalPages = Math.max(1, Math.ceil(totalLoads / PAGE_SIZE));
-  const pageStart = totalLoads === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const pageEnd = Math.min(totalLoads, currentPage * PAGE_SIZE);
+  const locationOptions = useMemo(() => {
+    const options = new Set<string>();
+
+    [...contextLoads, ...loads].forEach((load) => {
+      const origin = formatLoadLocation(load.origin);
+      const destination = formatLoadLocation(load.destination);
+
+      if (origin) {
+        options.add(origin);
+      }
+
+      if (destination) {
+        options.add(destination);
+      }
+    });
+
+    return Array.from(options);
+  }, [contextLoads, loads]);
+
   const filtersActive = Boolean(hasActiveFilters(filters));
   const visibleError = boardError || (!loads.length ? loadsError : "");
 
-  const loadBoardLoads = useCallback(async () => {
-    const requestId = requestIdRef.current + 1;
-    requestIdRef.current = requestId;
+  const loadBoardPage = useCallback(
+    async (page: number, mode: "reset" | "append") => {
+      const requestId = requestIdRef.current + 1;
+      requestIdRef.current = requestId;
 
-    try {
-      setIsBoardLoading(true);
-      setBoardError("");
+      try {
+        if (mode === "reset") {
+          setIsBoardLoading(true);
+        } else {
+          setIsLoadingMore(true);
+        }
 
-      const result = await fetchLoadsPage({
-        filters: supabaseFilters,
-        page: currentPage,
-        pageSize: PAGE_SIZE,
-        sortBy,
-      });
+        setBoardError("");
 
-      if (requestId !== requestIdRef.current) {
-        return;
+        const result = await fetchLoadsPage({
+          filters: supabaseFilters,
+          page,
+          pageSize: PAGE_SIZE,
+          sortBy,
+        });
+
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
+
+        setLoads((current) => {
+          if (mode === "reset") {
+            return result.loads;
+          }
+
+          const existing = new Set(current.map((load) => load.id));
+          return [
+            ...current,
+            ...result.loads.filter((load) => !existing.has(load.id)),
+          ];
+        });
+        setTotalLoads(result.count);
+        setHasMore(page * PAGE_SIZE < result.count && result.loads.length > 0);
+        setNextPage(page + 1);
+      } catch (error) {
+        if (requestId === requestIdRef.current) {
+          setBoardError(
+            error instanceof Error
+              ? error.message
+              : "Loads could not be loaded from Supabase"
+          );
+        }
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setIsBoardLoading(false);
+          setIsLoadingMore(false);
+        }
       }
-
-      const nextTotalPages = Math.max(1, Math.ceil(result.count / PAGE_SIZE));
-
-      setLoads(result.loads);
-      setTotalLoads(result.count);
-
-      if (currentPage > nextTotalPages) {
-        setCurrentPage(nextTotalPages);
-      }
-    } catch (error) {
-      if (requestId === requestIdRef.current) {
-        setBoardError(
-          error instanceof Error
-            ? error.message
-            : "Loads could not be loaded from Supabase"
-        );
-      }
-    } finally {
-      if (requestId === requestIdRef.current) {
-        setIsBoardLoading(false);
-      }
-    }
-  }, [currentPage, sortBy, supabaseFilters]);
+    },
+    [sortBy, supabaseFilters]
+  );
 
   useEffect(() => {
-    loadBoardLoads();
-  }, [loadBoardLoads]);
+    setLoads([]);
+    setTotalLoads(0);
+    setHasMore(true);
+    setNextPage(1);
+    loadBoardPage(1, "reset");
+  }, [loadBoardPage]);
+
+  const loadMore = useCallback(() => {
+    if (!hasMore || isBoardLoading || isLoadingMore) {
+      return;
+    }
+
+    loadBoardPage(nextPage, "append");
+  }, [hasMore, isBoardLoading, isLoadingMore, loadBoardPage, nextPage]);
+
+  useEffect(() => {
+    const root = scrollContainerRef.current;
+    const target = loadMoreTargetRef.current;
+
+    if (!root || !target) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          loadMore();
+        }
+      },
+      { root, rootMargin: "220px", threshold: 0.01 }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   const updateFilters = useCallback(
     (patch: Partial<LoadBoardFilters>) => {
-      setCurrentPage(1);
+      setNextPage(1);
       setFilters((current) => sanitizeFilters({ ...current, ...patch }));
 
       if (Object.prototype.hasOwnProperty.call(patch, "search")) {
@@ -461,7 +540,7 @@ export function LoadBoard() {
   );
 
   const clearFilters = useCallback(() => {
-    setCurrentPage(1);
+    setNextPage(1);
     setFilters(DEFAULT_FILTERS);
     setSearchQuery("");
   }, [setSearchQuery]);
@@ -473,9 +552,13 @@ export function LoadBoard() {
         return;
       }
 
-      setCurrentPage(1);
+      setNextPage(1);
       setFilters((current) => {
         switch (key) {
+          case "origin":
+            return { ...current, origin: "", originState: [] };
+          case "destination":
+            return { ...current, destination: "", destinationState: [] };
           case "equipment":
             return {
               ...current,
@@ -512,8 +595,9 @@ export function LoadBoard() {
   );
 
   const handleRefresh = useCallback(async () => {
-    await Promise.all([loadBoardLoads(), refreshLoads()]);
-  }, [loadBoardLoads, refreshLoads]);
+    setNextPage(1);
+    await Promise.all([loadBoardPage(1, "reset"), refreshLoads()]);
+  }, [loadBoardPage, refreshLoads]);
 
   const emptyTitle =
     filters.search.trim() || filtersActive
@@ -579,7 +663,7 @@ export function LoadBoard() {
             <Select
               value={sortBy}
               onValueChange={(value: LoadSortOption) => {
-                setCurrentPage(1);
+                setNextPage(1);
                 setSortBy(value);
               }}
             >
@@ -603,11 +687,15 @@ export function LoadBoard() {
         onRemove={removeFilter}
         onClear={clearFilters}
         brokerOptions={brokerOptions}
+        locationOptions={locationOptions}
         isLoading={isBoardLoading}
         resultCount={totalLoads}
       />
 
-      <div className="flex-1 overflow-auto bg-background p-2 sm:p-2.5 md:p-3">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-auto bg-background p-2 sm:p-2.5 md:p-3"
+      >
         <motion.div layout className="mx-auto max-w-7xl space-y-1.5">
           {visibleError && (
             <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-center">
@@ -652,40 +740,15 @@ export function LoadBoard() {
                   />
                 ))}
               </div>
-              <div className="flex flex-col gap-2 rounded-md border border-border bg-card px-2.5 py-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-                <span>
-                  Showing {pageStart.toLocaleString()}-
-                  {pageEnd.toLocaleString()} of {totalLoads.toLocaleString()}
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setCurrentPage((page) => Math.max(1, page - 1))
-                    }
-                    disabled={currentPage <= 1 || isBoardLoading}
-                    className="h-8 rounded-md border-border px-2 text-xs"
-                  >
-                    Previous
-                  </Button>
-                  <span className="rounded-md border border-border bg-background px-2.5 py-1.5 text-foreground">
-                    Page {currentPage} / {totalPages}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setCurrentPage((page) => Math.min(totalPages, page + 1))
-                    }
-                    disabled={currentPage >= totalPages || isBoardLoading}
-                    className="h-8 rounded-md border-border px-2 text-xs"
-                  >
-                    Next
-                  </Button>
-                </div>
+              <div
+                ref={loadMoreTargetRef}
+                className="flex min-h-10 items-center justify-center rounded-md border border-border bg-card px-2.5 py-2 text-xs text-muted-foreground"
+              >
+                {isLoadingMore
+                  ? "Loading more loads..."
+                  : hasMore
+                  ? `Showing ${loads.length.toLocaleString()} of ${totalLoads.toLocaleString()}`
+                  : `All ${totalLoads.toLocaleString()} matching loads loaded`}
               </div>
             </>
           )}
